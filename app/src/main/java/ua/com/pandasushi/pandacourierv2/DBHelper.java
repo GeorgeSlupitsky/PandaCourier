@@ -1,4 +1,4 @@
-package com.panda_sushi.pandacourierv2;
+package ua.com.pandasushi.pandacourierv2;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;

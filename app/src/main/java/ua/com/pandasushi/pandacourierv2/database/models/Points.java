@@ -1,4 +1,4 @@
-package com.panda_sushi.pandacourierv2.models.database;
+package ua.com.pandasushi.pandacourierv2.database.models;
 
 /**
  * Created by oleg on 13.06.16.

@@ -1,4 +1,4 @@
-package com.panda_sushi.pandacourierv2.services;
+package ua.com.pandasushi.pandacourierv2.services;
 
 import android.Manifest;
 import android.app.Service;
@@ -20,6 +20,7 @@ import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import com.google.gson.Gson;
+import ua.com.pandasushi.pandacourierv2.DBHelper;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -27,10 +28,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import com.panda_sushi.pandacourierv2.DBHelper;
-import com.panda_sushi.pandacourierv2.models.database.AVLData;
-import com.panda_sushi.pandacourierv2.models.database.Points;
-import com.panda_sushi.pandacourierv2.models.database.Track;
+import ua.com.pandasushi.pandacourierv2.database.models.AVLData;
+import ua.com.pandasushi.pandacourierv2.database.models.Points;
+import ua.com.pandasushi.pandacourierv2.database.models.Track;
 
 /**
  * Created by postp on 18.03.2018.

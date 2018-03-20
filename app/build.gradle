@@ -3,8 +3,8 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 26
     defaultConfig {
-        applicationId "com.panda_sushi.pandacourierv2"
-        minSdkVersion 25
+        applicationId "ua.com.pandasushi.pandacourierv2"
+        minSdkVersion 14
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
