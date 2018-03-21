@@ -8,5 +8,7 @@ public enum Commands implements Serializable {
     END_CHANGE,
     GET_ORDER_LIST,
     UPDATE_ORDER,
-    SAVE_TRACK
+    SAVE_TRACK,
+    GET_COURIER_LIST,
+    CHECK_COURIER_PASSWORD
 }

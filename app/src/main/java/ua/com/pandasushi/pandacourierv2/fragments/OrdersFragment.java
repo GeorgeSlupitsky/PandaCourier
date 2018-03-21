@@ -33,6 +33,10 @@ public class OrdersFragment extends Fragment {
         myOrdersFragment = new MyOrdersFragment();
         closedFragment = new ClosedFragment();
 
+        onExecuteFragment.setArguments(getArguments());
+        myOrdersFragment.setArguments(getArguments());
+        closedFragment.setArguments(getArguments());
+
         ViewPager viewPager = (ViewPager) rootView.findViewById(R.id.viewpager);
         setupViewPager(viewPager);
 

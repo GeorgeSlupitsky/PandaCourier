@@ -7,19 +7,19 @@ public class CourierOrder implements Serializable {
 
 
     //Блок зі статичними даними, програма їх змінювати не буде
-    private Long orderID; //id замовлення
-    private String charcode; //номер замовлення
-    private String phone; // телефон клієнта
-    private String name; // ім'я клієнта
-    private String street;
-    private String house;
-    private String apartament;
+    private Long orderID; //id замовлення     10004432, 20003759, 60423465
+    private String charcode; //номер замовлення SV345, LV456, VM345
+    private String phone; // телефон клієнта (XXX)XXX-XX-XX
+    private String name; // ім'я клієнта Олег, Андрій, Оксана
+    private String street; // Дністерська, Медової печери, Карбишева
+    private String house; // 6, 9, 12б, 14/6
+    private String apartament; // 2, 215, 2/43
     /*
     private Integer region; // ID району, залежить фон замовлення та скорочення
     замість цього - наступні 2 поля
     */
-    private String regionCharcode;
-    private Integer regionBackground;
+    private String regionCharcode; // СБ, НВ, ПАС, САД
+    private Integer regionBackground; // -16711936 , -6605, -8225987,  -11294689
     private Date preferedTime; //на цей час мають орієнтуватись кур’єри
     private Date promiseTime; //обіцяний час, після нього йде компенсація
     private Integer finalCost; //сума до оплати

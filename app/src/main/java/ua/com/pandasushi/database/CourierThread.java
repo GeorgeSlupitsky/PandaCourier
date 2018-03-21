@@ -8,6 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class CourierThread extends Thread {
     protected Socket socket;
@@ -60,6 +61,12 @@ public class CourierThread extends Thread {
                 case SAVE_TRACK:
                     response = saveTrack(command);
                     break;
+                case GET_COURIER_LIST:
+                    response = getCourierList(command);
+                    break;
+                case CHECK_COURIER_PASSWORD:
+                    response = checkCourierPassword(command);
+                    break;
                 default:
                     break;
             }
@@ -97,11 +104,59 @@ public class CourierThread extends Thread {
     }
 
     private ArrayList<CourierOrder> getOrderList(CourierCommand command) {
+
         ArrayList<CourierOrder> result = new ArrayList<>();
-        CourierOrder order = new CourierOrder();
-        order.setOrderID(1000041241l);
-        order.setCharcode("SV467");
-        result.add(order);
+//        CourierOrder order = new CourierOrder();
+//        order.setOrderID(1000041241l);
+//        order.setCharcode("SV467");
+//        order.setPhone("0631390085");
+//        order.setName("Олег");
+//        order.setStreet("Личаківська");
+//        order.setHouse("10");
+//        order.setApartament("2");
+//        order.setRegionCharcode("СБ");
+//        order.setRegionBackground(-16711936);
+//        order.setPreferedTime(new Date());
+//        order.setPromiseTime(new Date());
+//        order.setFinalCost(100);
+//        order.setDishes("ПРНС");
+//        order.setCourierId(123);
+//
+//        CourierOrder order2 = new CourierOrder();
+//        order.setOrderID(1000031241l);
+//        order.setCharcode("SV437");
+//        order.setPhone("0631390085");
+//        order.setName("Єгор");
+//        order.setStreet("Кавалерідзе");
+//        order.setHouse("3");
+//        order.setApartament("2");
+//        order.setRegionCharcode("НВ");
+//        order.setRegionBackground(-6605);
+//        order.setPreferedTime(new Date());
+//        order.setPromiseTime(new Date());
+//        order.setFinalCost(100);
+//        order.setDishes("ПР");
+//        order.setCourierId(124);
+//
+//        CourierOrder order3 = new CourierOrder();
+//        order.setOrderID(1000031251l);
+//        order.setCharcode("SV433");
+//        order.setPhone("0631390085");
+//        order.setName("Єгор");
+//        order.setStreet("Медової Печери");
+//        order.setHouse("3");
+//        order.setApartament("2");
+//        order.setRegionCharcode("ПАС");
+//        order.setRegionBackground(-11294689);
+//        order.setPreferedTime(new Date());
+//        order.setPromiseTime(new Date());
+//        order.setFinalCost(100);
+//        order.setDishes("ПРН");
+//        order.setCourierId(null);
+//
+//        result.add(order);
+//        result.add(order2);
+//        result.add(order3);
         return result;
     }
 
@@ -110,6 +165,14 @@ public class CourierThread extends Thread {
     }
 
     private Object saveTrack(CourierCommand command) {
+        return null;
+    }
+
+    private Object getCourierList(CourierCommand command) {
+        return null;
+    }
+
+    private Object checkCourierPassword(CourierCommand command) {
         return null;
     }
 
