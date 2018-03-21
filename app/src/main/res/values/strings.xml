@@ -7,4 +7,11 @@
     <string name="on_execute">On execute</string>
     <string name="my_orders">My orders</string>
     <string name="closed">Closed</string>
+    <string name="password">Password</string>
+    <string name="password_incorrect">Incorrect password</string>
+
+    <string name="cancel">Cancel</string>
+    <string name="call">Call</string>
+    <string name="map">Map</string>
+    <string name="delivered">Delivered</string>
 </resources>

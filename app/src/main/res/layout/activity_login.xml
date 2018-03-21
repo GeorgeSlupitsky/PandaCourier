@@ -6,11 +6,30 @@
     android:layout_height="match_parent"
     tools:context="ua.com.pandasushi.pandacourierv2.activities.LoginActivity">
 
+
+    <Spinner
+        android:id="@+id/spinnerCourier"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:drawable/btn_dropdown"
+        android:spinnerMode="dropdown"/>
+
+    <EditText
+        android:id="@+id/password"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/spinnerCourier"
+        android:hint="@string/password" />
+
     <Button
         android:id="@+id/start_shift"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/start_shift"
-        android:layout_centerInParent="true" />
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="206dp"
+        android:text="@string/start_shift" />
 
 </RelativeLayout>

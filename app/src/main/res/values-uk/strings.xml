@@ -8,4 +8,11 @@
     <string name="on_execute">На видачі</string>
     <string name="my_orders">Мої замовлення</string>
     <string name="closed">Закриті</string>
+    <string name="password">Пароль</string>
+    <string name="password_incorrect">Невірний пароль</string>
+
+    <string name="cancel">Відмінити</string>
+    <string name="call">Подзвонити</string>
+    <string name="map">Карта</string>
+    <string name="delivered">Доставлено</string>
 </resources>
