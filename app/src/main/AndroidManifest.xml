@@ -20,6 +20,7 @@
             </intent-filter>
         </activity>
         <activity android:name="ua.com.pandasushi.pandacourierv2.activities.OrdersActivity" />
+        <activity android:name="ua.com.pandasushi.pandacourierv2.activities.ChooseMapActivity" />
     </application>
 
 </manifest>

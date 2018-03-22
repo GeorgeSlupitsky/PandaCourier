@@ -36,13 +36,14 @@ public class OnExecuteFragment extends Fragment{
 
     private final String ATTRIBUTE_NAME_ORDER = "order";
     private final String ATTRIBUTE_NAME_ON_EXECUTE = "on execute";
+    private final String ATTRIBUTE_NAME_MAPS = "maps";
 
     private List<CourierOrder> orders;
 
     private ListView listView;
     private ArrayList<Map<String, Object>> data;
 
-    private String [] mFrom = {ATTRIBUTE_NAME_ORDER, ATTRIBUTE_NAME_ON_EXECUTE};
+    private String [] mFrom = {ATTRIBUTE_NAME_ORDER, ATTRIBUTE_NAME_ON_EXECUTE, ATTRIBUTE_NAME_MAPS};
 
     private CustomAdapterOnExecuteAndMyOrders customAdapterOnExecuteAndMyOrders;
 
@@ -51,6 +52,8 @@ public class OnExecuteFragment extends Fragment{
     private SharedPreferences sharedPreferences;
 
     private Gson gson = new Gson();
+
+    private String maps;
 
     Runnable refreshOrdersList = new Runnable() {
         @Override
@@ -67,6 +70,8 @@ public class OnExecuteFragment extends Fragment{
         listView = rootView.findViewById(R.id.lvOnExecute);
 
         sharedPreferences = getContext().getSharedPreferences("myPref", Context.MODE_PRIVATE);
+
+        maps = sharedPreferences.getString("maps", "MapsME");
 
         createCustomAdapter();
 
@@ -90,20 +95,21 @@ public class OnExecuteFragment extends Fragment{
 
         data = new ArrayList<>();
 
-        Collections.sort(orders, (courierOrder, courierOrder2) -> {
-            if (courierOrder.getCourierId() == null){
-                return Integer.MIN_VALUE;
-            } else {
-                return courierOrder.getCourierId().compareTo(courierOrder2.getCourierId());
-            }
-        });
-
         if (orders != null){
+            Collections.sort(orders, (courierOrder, courierOrder2) -> {
+                if (courierOrder.getCourierId() == null){
+                    return Integer.MIN_VALUE;
+                } else {
+                    return courierOrder.getCourierId().compareTo(courierOrder2.getCourierId());
+                }
+            });
+
             for (CourierOrder order: orders){
                 Map<String, Object> m = new HashMap<>();
 
                 m.put(ATTRIBUTE_NAME_ORDER, order);
                 m.put(ATTRIBUTE_NAME_ON_EXECUTE, true);
+                m.put(ATTRIBUTE_NAME_MAPS, maps);
 
                 data.add(m);
             }

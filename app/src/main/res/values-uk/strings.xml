@@ -18,4 +18,8 @@
     <string name="client_name">Ім`я клієнта</string>
 
     <string name="loading_maps_me">Maps Me завантажується. Будь ласка, почекайте.</string>
+    <string name="connection">Будь ласка, почекайте йде з`єднання.</string>
+    <string name="choose_map">Оберіть карти:</string>
+    <string name="settings">Налаштування</string>
+    <string name="save">Зберегти</string>
 </resources>

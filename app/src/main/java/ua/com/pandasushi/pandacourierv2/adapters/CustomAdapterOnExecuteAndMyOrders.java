@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -47,6 +48,7 @@ public class CustomAdapterOnExecuteAndMyOrders extends ArrayAdapter<Map<String, 
     private int layoutResourceId;
     private String[] mFrom;
     private String maps;
+    private SharedPreferences sharedPreferences;
 
     public CustomAdapterOnExecuteAndMyOrders(Context context, int resource, ArrayList<Map<String, Object>> data, String[] mFrom) {
         super(context, resource, data);
@@ -148,8 +150,11 @@ public class CustomAdapterOnExecuteAndMyOrders extends ArrayAdapter<Map<String, 
             row.setBackgroundColor(getContext().getResources().getColor(R.color.grey));
         }
 
-        maps = "MapsME";
-//        maps = "GoogleMaps";
+        sharedPreferences = getContext().getSharedPreferences("myPref", Context.MODE_PRIVATE);
+
+        maps = sharedPreferences.getString("maps", "MapsME");
+
+        System.out.println("");
 
         row.setOnClickListener(view -> {
             if (onExecute){

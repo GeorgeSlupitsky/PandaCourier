@@ -14,7 +14,6 @@ import android.widget.Toast;
 import com.pandasushi.pandacourierv2.R;
 
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
 
 import ua.com.pandasushi.database.common.Commands;
 import ua.com.pandasushi.database.common.Courier;
