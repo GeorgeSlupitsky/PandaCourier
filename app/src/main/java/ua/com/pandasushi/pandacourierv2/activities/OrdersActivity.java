@@ -1,5 +1,7 @@
 package ua.com.pandasushi.pandacourierv2.activities;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.FragmentTransaction;
@@ -28,28 +30,35 @@ public class OrdersActivity extends AppCompatActivity {
 
     private OrdersFragment ordersFragment;
     private boolean denyBackpress;
-    private List<CourierOrder> orders = new ArrayList<>();
+    private Integer courierId;
+    private SharedPreferences sharedPreferences;
+
+    private List<CourierOrder> orders;
+
     private Handler handler = new Handler();
+
     private Gson gson = new Gson();
-    private Bundle bundle = new Bundle();
 
     Runnable refreshOrdersList = new Runnable() {
         @Override
         public void run() {
             try {
+                orders = null;
+
                 CourierCommand courierCommand = new CourierCommand();
                 courierCommand.setCourierId(123);
                 courierCommand.setCommand(Commands.GET_ORDER_LIST);
+
                 orders = (ArrayList) new SocketAsyncTask().execute(courierCommand).get();
+
+                if (orders != null){
+                    sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
+                }
+
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-            String ordersJson = gson.toJson(orders);
-
-            bundle.putString("orders", ordersJson);
-
-            ordersFragment.setArguments(bundle);
 
             handler.postDelayed(this, 30000);
         }
@@ -60,15 +69,7 @@ public class OrdersActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_orders);
 
-        try {
-            CourierCommand courierCommand = new CourierCommand();
-            courierCommand.setCourierId(123);
-            courierCommand.setCommand(Commands.GET_ORDER_LIST);
-            orders = (ArrayList) new SocketAsyncTask().execute(courierCommand).get();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        sharedPreferences = getSharedPreferences("myPref", Context.MODE_PRIVATE);
 
         denyBackpress = true;
 
@@ -77,17 +78,12 @@ public class OrdersActivity extends AppCompatActivity {
         FragmentTransaction transaction =
                 getSupportFragmentManager().beginTransaction();
 
-        String ordersJson = gson.toJson(orders);
-
-        bundle.putString("orders", ordersJson);
-
-        ordersFragment.setArguments(bundle);
-
         transaction.add(R.id.frameLayout, ordersFragment);
 
         transaction.commitAllowingStateLoss();
 
         handler.post(refreshOrdersList);
+
     }
 
     @Override
@@ -100,7 +96,6 @@ public class OrdersActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
             case 0:
-                handler.removeCallbacks(refreshOrdersList);
                 finish();
                 return true;
 
@@ -118,5 +113,11 @@ public class OrdersActivity extends AppCompatActivity {
         } else {
             super.onBackPressed();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        handler.removeCallbacks(refreshOrdersList);
     }
 }

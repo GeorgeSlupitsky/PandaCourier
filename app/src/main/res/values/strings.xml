@@ -14,4 +14,7 @@
     <string name="call">Call</string>
     <string name="map">Map</string>
     <string name="delivered">Delivered</string>
+    <string name="client_name">Client name</string>
+
+    <string name="loading_maps_me">Maps Me is loading. Please wait.</string>
 </resources>

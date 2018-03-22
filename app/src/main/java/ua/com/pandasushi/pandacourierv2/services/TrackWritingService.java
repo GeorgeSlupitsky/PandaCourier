@@ -52,8 +52,6 @@ public class TrackWritingService extends Service implements LocationListener {
     private boolean isStart = false;
     private int lenght, fullLenght;
     private ArrayList<Points> pointsList = new ArrayList<>();
-    private ArrayList<Point> chartPoits = new ArrayList<>();
-    private ArrayList<Point> altitudeChart = new ArrayList<>();
     private ArrayList<Double> points = new ArrayList<>();
     private DBHelper dbHelper;
     private String timeStart, timeStop;
@@ -120,12 +118,6 @@ public class TrackWritingService extends Service implements LocationListener {
                             location2.setLongitude(Double.parseDouble(pointsList.get(i + 1).getLon()));
                             int meters = (int) location1.distanceTo(location2);
                             lenght += meters;
-                        }
-                        if (avlData.getSpeed() != 0) {
-                            chartPoits.add(new Point(avlData.getSpeed(), lenght));
-                        }
-                        if (avlData.getAltitude() != 0) {
-                            altitudeChart.add(new Point(avlData.getAltitude(), lenght));
                         }
                     }
                 } else {
@@ -195,8 +187,6 @@ public class TrackWritingService extends Service implements LocationListener {
             track.setTimeStart(timeStart);
             track.setTimeStop(timeStop);
             track.setPoints(pointsList);
-            track.setChartPoits(chartPoits);
-            track.setAltitudeChart(altitudeChart);
             ArrayList<Integer> speedList = new ArrayList<>();
             ArrayList<Integer> altitudeList = new ArrayList<>();
             String length;

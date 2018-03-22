@@ -3,15 +3,12 @@ package ua.com.pandasushi.pandacourierv2.connection;
 import android.os.AsyncTask;
 
 import java.io.EOFException;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
-import ua.com.pandasushi.database.common.Commands;
 import ua.com.pandasushi.database.common.CourierCommand;
 
 /**
@@ -20,8 +17,8 @@ import ua.com.pandasushi.database.common.CourierCommand;
 
 public class SocketAsyncTask extends AsyncTask<CourierCommand, Void, Object> {
 
-    private final String HOST = "192.168.0.104"; //home
-//    private static final String HOST = "192.168.88.254"; //work
+//    private final String HOST = "192.168.0.104"; //home
+    private static final String HOST = "192.168.88.254"; //work
     private static final int PORT = 29999;
 
     @Override

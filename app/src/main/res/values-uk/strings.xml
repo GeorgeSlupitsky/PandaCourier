@@ -15,4 +15,7 @@
     <string name="call">Подзвонити</string>
     <string name="map">Карта</string>
     <string name="delivered">Доставлено</string>
+    <string name="client_name">Ім`я клієнта</string>
+
+    <string name="loading_maps_me">Maps Me завантажується. Будь ласка, почекайте.</string>
 </resources>
