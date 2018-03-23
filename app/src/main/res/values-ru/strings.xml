@@ -4,6 +4,8 @@
     <string name="start_shift">Начать смену</string>
     <string name="close_shift">Закрыть смену</string>
     <string name="connection_error">Ошибка соединения</string>
+    <string name="connection_error_cannot_take">Вы не можете взять заказ. Ошибка соединения</string>
+    <string name="connection_error_cannot_cancel">Вы не можете отменить заказ. Ошибка соединения</string>
     <string name="deny_backpressed">Для закрытия смены, пожалуйста, нажмите `Меню` - `Закрыть смену`</string>
     <string name="on_execute">На видаче</string>
     <string name="my_orders">Мои заказы</string>
@@ -22,4 +24,5 @@
     <string name="choose_map">Выберите карты:</string>
     <string name="settings">Настройки</string>
     <string name="save">Сохранить</string>
+    <string name="take">Взять</string>
 </resources>

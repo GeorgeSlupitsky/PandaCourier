@@ -16,7 +16,9 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.gson.Gson;
 import com.pandasushi.pandacourierv2.R;
 
 import org.apache.http.NameValuePair;
@@ -31,7 +33,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import ua.com.pandasushi.database.common.Commands;
+import ua.com.pandasushi.database.common.CourierCommand;
 import ua.com.pandasushi.database.common.CourierOrder;
+import ua.com.pandasushi.pandacourierv2.activities.OrdersActivity;
+import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
 import ua.com.pandasushi.pandacourierv2.mapsmeapi.MWMPoint;
 import ua.com.pandasushi.pandacourierv2.mapsmeapi.MapsWithMeApi;
 import ua.com.pandasushi.pandacourierv2.parser.JSONParser;
@@ -40,7 +46,7 @@ import ua.com.pandasushi.pandacourierv2.parser.JSONParser;
  * Created by postp on 21.03.2018.
  */
 
-public class CustomAdapterOnExecuteAndMyOrders extends ArrayAdapter<Map<String, Object>> {
+public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, Object>> {
 
     private SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
     private Context context;
@@ -50,7 +56,7 @@ public class CustomAdapterOnExecuteAndMyOrders extends ArrayAdapter<Map<String, 
     private String maps;
     private SharedPreferences sharedPreferences;
 
-    public CustomAdapterOnExecuteAndMyOrders(Context context, int resource, ArrayList<Map<String, Object>> data, String[] mFrom) {
+    public OnExecuteAndMyOrdersCustomAdapter(Context context, int resource, ArrayList<Map<String, Object>> data, String[] mFrom) {
         super(context, resource, data);
         this.context = context;
         this.data = data;
@@ -83,6 +89,8 @@ public class CustomAdapterOnExecuteAndMyOrders extends ArrayAdapter<Map<String, 
         CourierOrder order = (CourierOrder) data.get(position).get(mFrom[0]);
 
         String dishes = order.getDishes();
+
+        Integer courierId = (Integer) data.get(position).get(mFrom[3]);
 
         char[] chars = dishes.toCharArray();
 
@@ -152,14 +160,46 @@ public class CustomAdapterOnExecuteAndMyOrders extends ArrayAdapter<Map<String, 
 
         sharedPreferences = getContext().getSharedPreferences("myPref", Context.MODE_PRIVATE);
 
-        maps = sharedPreferences.getString("maps", "MapsME");
+        maps = sharedPreferences.getString("maps", "GoogleMaps");
 
         System.out.println("");
 
         row.setOnClickListener(view -> {
             if (onExecute){
                 if (order.getCourierId() == null){
+                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                    builder.setItems(new CharSequence[]
+                                    {getContext().getString(R.string.take)},
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    switch (which) {
+                                        case 0:
+                                            try {
+                                                CourierCommand courierCommand = new CourierCommand();
+                                                courierCommand.setCourierId(courierId);
+                                                courierCommand.setOrderId(order.getOrderID());
+                                                courierCommand.setCommand(Commands.UPDATE_ORDER);
+                                                String response = (String) new SocketAsyncTask(getContext()).execute(courierCommand).get();
+                                                if (response.equals("OK")){
+                                                    ArrayList<CourierOrder> orders = OrdersActivity.refreshOrderList();
 
+                                                    Gson gson = new Gson();
+
+                                                    if (orders != null){
+                                                        sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
+                                                    }
+                                                }
+                                            } catch (Exception e) {
+                                                e.printStackTrace();
+                                                Toast toast = Toast.makeText(getContext().getApplicationContext(),
+                                                        getContext().getString(R.string.connection_error_cannot_take), Toast.LENGTH_LONG);
+                                                toast.show();
+                                            }
+                                            break;
+                                    }
+                                }
+                            });
+                    builder.create().show();
                 } else {
 
                 }
@@ -173,6 +213,30 @@ public class CustomAdapterOnExecuteAndMyOrders extends ArrayAdapter<Map<String, 
                             public void onClick(DialogInterface dialog, int which) {
                                 switch (which) {
                                     case 0:
+                                        try {
+                                            CourierCommand courierCommand = new CourierCommand();
+                                            courierCommand.setCourierId(null);
+                                            courierCommand.setOrderId(order.getOrderID());
+                                            courierCommand.setCommand(Commands.UPDATE_ORDER);
+                                            String response = (String) new SocketAsyncTask(getContext()).execute(courierCommand).get();
+                                            if (response.equals("OK")){
+                                                CourierCommand courierCommand2 = new CourierCommand();
+                                                courierCommand2.setCourierId(courierId);
+                                                courierCommand2.setCommand(Commands.GET_ORDER_LIST);
+                                                ArrayList<CourierOrder> orders = OrdersActivity.refreshOrderList();
+
+                                                Gson gson = new Gson();
+
+                                                if (orders != null){
+                                                    sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
+                                                }
+                                            }
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                            Toast toast = Toast.makeText(getContext().getApplicationContext(),
+                                                    getContext().getString(R.string.connection_error_cannot_cancel), Toast.LENGTH_LONG);
+                                            toast.show();
+                                        }
                                         break;
                                     case 1:
                                         Intent intent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + order.getPhone()));

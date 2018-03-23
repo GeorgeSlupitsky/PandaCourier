@@ -32,14 +32,16 @@ public class OrdersActivity extends AppCompatActivity {
 
     private OrdersFragment ordersFragment;
     private boolean denyBackpress;
-    private Integer courierId;
+    private static Integer courierId;
     private SharedPreferences sharedPreferences;
 
-    private List<CourierOrder> orders;
+    private static ArrayList<CourierOrder> orders;
 
     private Handler handler = new Handler();
 
     private Gson gson = new Gson();
+
+    private String responseFinishShift;
 
     Runnable refreshOrdersList = new Runnable() {
         @Override
@@ -48,7 +50,7 @@ public class OrdersActivity extends AppCompatActivity {
                 orders = null;
 
                 CourierCommand courierCommand = new CourierCommand();
-                courierCommand.setCourierId(123);
+                courierCommand.setCourierId(courierId);
                 courierCommand.setCommand(Commands.GET_ORDER_LIST);
 
                 orders = (ArrayList) new SocketAsyncTask().execute(courierCommand).get();
@@ -62,7 +64,7 @@ public class OrdersActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
 
-            handler.postDelayed(this, 30000);
+            handler.postDelayed(this, 10000);
         }
     };
 
@@ -72,6 +74,8 @@ public class OrdersActivity extends AppCompatActivity {
         setContentView(R.layout.activity_orders);
 
         sharedPreferences = getSharedPreferences("myPref", Context.MODE_PRIVATE);
+
+        courierId = sharedPreferences.getInt("courierId", -1);
 
         denyBackpress = true;
 
@@ -83,9 +87,6 @@ public class OrdersActivity extends AppCompatActivity {
         transaction.add(R.id.frameLayout, ordersFragment);
 
         transaction.commitAllowingStateLoss();
-
-        handler.post(refreshOrdersList);
-
     }
 
     @Override
@@ -99,6 +100,19 @@ public class OrdersActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.finishShift:
+                try {
+                    CourierCommand courierCommand = new CourierCommand();
+                    courierCommand.setCourierId(courierId);
+                    courierCommand.setCommand(Commands.END_CHANGE);
+                    responseFinishShift = (String) new SocketAsyncTask(OrdersActivity.this).execute(courierCommand).get();
+                    if (responseFinishShift.equals("OK")){
+                        sharedPreferences.edit().putBoolean("startShift", false).apply();
+                        finish();
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 finish();
                 return true;
             case R.id.chooseMap:
@@ -122,8 +136,30 @@ public class OrdersActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    protected void onResume() {
+        super.onResume();
+        handler.post(refreshOrdersList);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
         handler.removeCallbacks(refreshOrdersList);
+    }
+
+    public static ArrayList <CourierOrder> refreshOrderList(){
+        try {
+            orders = null;
+
+            CourierCommand courierCommand = new CourierCommand();
+            courierCommand.setCourierId(courierId);
+            courierCommand.setCommand(Commands.GET_ORDER_LIST);
+
+            orders = (ArrayList) new SocketAsyncTask().execute(courierCommand).get();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return orders;
     }
 }

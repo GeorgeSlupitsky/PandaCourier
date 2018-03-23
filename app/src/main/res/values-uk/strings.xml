@@ -4,6 +4,8 @@
     <string name="start_shift">Розпочати зміну</string>
     <string name="close_shift">Закрити зміну</string>
     <string name="connection_error">Помилка з`єднання</string>
+    <string name="connection_error_cannot_take">Вы не можете взяти замовлення. Помилка з`єднання</string>
+    <string name="connection_error_cannot_cancel">Вы не можете відмінити замовлення. Помилка з`єднання</string>
     <string name="deny_backpressed">Для закриття зміни, будь ласка, натисніть `Меню` - `Закрити зміну`</string>
     <string name="on_execute">На видачі</string>
     <string name="my_orders">Мої замовлення</string>
@@ -22,4 +24,5 @@
     <string name="choose_map">Оберіть карти:</string>
     <string name="settings">Налаштування</string>
     <string name="save">Зберегти</string>
+    <string name="take">Взяти</string>
 </resources>

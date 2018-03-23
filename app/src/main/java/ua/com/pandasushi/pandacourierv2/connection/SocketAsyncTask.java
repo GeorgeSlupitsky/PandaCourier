@@ -1,6 +1,10 @@
 package ua.com.pandasushi.pandacourierv2.connection;
 
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.os.AsyncTask;
+
+import com.pandasushi.pandacourierv2.R;
 
 import java.io.EOFException;
 import java.io.ObjectInputStream;
@@ -17,9 +21,30 @@ import ua.com.pandasushi.database.common.CourierCommand;
 
 public class SocketAsyncTask extends AsyncTask<CourierCommand, Void, Object> {
 
-    private final String HOST = "192.168.0.104"; //home
-//    private static final String HOST = "192.168.88.254"; //work
+//    private final String HOST = "192.168.0.104"; //home
+    private static final String HOST = "192.168.88.254"; //work
     private static final int PORT = 29999;
+    private Context context;
+    private ProgressDialog pDialog;
+
+    public SocketAsyncTask(){
+    }
+
+    public SocketAsyncTask(Context context){
+        this.context = context;
+    }
+
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+        if (context != null){
+            pDialog = new ProgressDialog(context);
+            pDialog.setMessage(context.getString(R.string.connection));
+            pDialog.setIndeterminate(false);
+            pDialog.setCancelable(false);
+            pDialog.show();
+        }
+    }
 
     @Override
     protected Object doInBackground(CourierCommand... commands) {
@@ -44,5 +69,13 @@ public class SocketAsyncTask extends AsyncTask<CourierCommand, Void, Object> {
         }
 
         return response;
+    }
+
+    @Override
+    protected void onPostExecute(Object o) {
+        super.onPostExecute(o);
+        if (context != null){
+            pDialog.dismiss();
+        }
     }
 }

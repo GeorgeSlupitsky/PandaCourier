@@ -31,6 +31,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private SharedPreferences sharedPreferences;
     private Integer courierId;
+    private boolean isStartShift;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +44,13 @@ public class LoginActivity extends AppCompatActivity {
 
         sharedPreferences = getSharedPreferences("myPref", MODE_PRIVATE);
 
+        isStartShift = sharedPreferences.getBoolean("startShift", false);
+
+        if (isStartShift){
+            Intent intent = new Intent(this, OrdersActivity.class);
+            startActivity(intent);
+        }
+
         courierId = sharedPreferences.getInt("courierId", -1);
 
         if (courierId == -1){
@@ -50,7 +58,7 @@ public class LoginActivity extends AppCompatActivity {
                 CourierCommand courierCommand = new CourierCommand();
                 courierCommand.setCourierId(courierId);
                 courierCommand.setCommand(Commands.GET_COURIER_LIST);
-                couriers = (ArrayList<Courier>) new SocketAsyncTask().execute(courierCommand).get();
+                couriers = (ArrayList<Courier>) new SocketAsyncTask(this).execute(courierCommand).get();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -84,7 +92,7 @@ public class LoginActivity extends AppCompatActivity {
                 try {
                     CourierCommand courierCommand = new CourierCommand();
                     courierCommand.setCommand(Commands.CHECK_COURIER_PASSWORD);
-                    checkPassword = (String) new SocketAsyncTask().execute(courierCommand).get();
+                    checkPassword = (String) new SocketAsyncTask(this).execute(courierCommand).get();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -98,13 +106,14 @@ public class LoginActivity extends AppCompatActivity {
                             CourierCommand courierCommand = new CourierCommand();
                             courierCommand.setCourierId(courierId);
                             courierCommand.setCommand(Commands.START_CHANGE);
-                            responseStartShift = (String) new SocketAsyncTask().execute(courierCommand).get();
+                            responseStartShift = (String) new SocketAsyncTask(this).execute(courierCommand).get();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
 
                         if (responseStartShift != null){
                             if (responseStartShift.equals("OK")){
+                                sharedPreferences.edit().putBoolean("startShift", true).apply();
                                 Intent intent = new Intent(this, OrdersActivity.class);
                                 startActivity(intent);
                             } else {
@@ -132,13 +141,14 @@ public class LoginActivity extends AppCompatActivity {
                     CourierCommand courierCommand = new CourierCommand();
                     courierCommand.setCourierId(courierId);
                     courierCommand.setCommand(Commands.START_CHANGE);
-                    responseStartShift = (String) new SocketAsyncTask().execute(courierCommand).get();
+                    responseStartShift = (String) new SocketAsyncTask(this).execute(courierCommand).get();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
 
                 if (responseStartShift != null){
                     if (responseStartShift.equals("OK")){
+                        sharedPreferences.edit().putBoolean("startShift", true).apply();
                         Intent intent = new Intent(this, OrdersActivity.class);
                         startActivity(intent);
                     } else {

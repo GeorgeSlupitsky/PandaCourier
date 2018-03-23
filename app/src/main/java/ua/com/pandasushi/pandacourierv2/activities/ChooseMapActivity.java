@@ -22,6 +22,7 @@ public class ChooseMapActivity extends AppCompatActivity {
     private RadioButton googleMapsRadio;
     private Button save;
     private SharedPreferences sharedPreferences;
+    private String maps;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +37,13 @@ public class ChooseMapActivity extends AppCompatActivity {
         googleMapsRadio = (RadioButton) findViewById(R.id.googleMapsRadio);
         save = (Button) findViewById(R.id.saveBtn);
 
-        mapsMeRadio.setChecked(true);
+        maps = sharedPreferences.getString("maps", "GoogleMaps");
+
+        if (maps.equals("MapsME")){
+            mapsMeRadio.setChecked(true);
+        } else if (maps.equals("GoogleMaps")){
+            googleMapsRadio.setChecked(true);
+        }
 
         save.setOnClickListener(new View.OnClickListener() {
             @Override

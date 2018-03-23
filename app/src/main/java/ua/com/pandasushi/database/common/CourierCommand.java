@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 public class CourierCommand implements Serializable {
     private Integer courierId;
+    private Long orderId;
     private Commands command;
 
     public Integer getCourierId() {
@@ -20,5 +21,13 @@ public class CourierCommand implements Serializable {
 
     public void setCommand(Commands command) {
         this.command = command;
+    }
+
+    public Long getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(Long orderId) {
+        this.orderId = orderId;
     }
 }
