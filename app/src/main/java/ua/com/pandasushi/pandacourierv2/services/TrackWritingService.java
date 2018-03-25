@@ -1,8 +1,10 @@
 package ua.com.pandasushi.pandacourierv2.services;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
@@ -20,6 +22,7 @@ import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import com.google.gson.Gson;
+
 import ua.com.pandasushi.pandacourierv2.DBHelper;
 
 import java.text.SimpleDateFormat;
@@ -48,7 +51,7 @@ public class TrackWritingService extends Service implements LocationListener {
     private static String gprmc, gpgga;
     private static int pointsOnTrack, timerCount;
     private ArrayList<AVLData> lisAvldata = new ArrayList<>();
-    private static Double currectLat, currectLon;
+    public static Double currentLat, currentLon;
     private boolean isStart = false;
     private int lenght, fullLenght;
     private ArrayList<Points> pointsList = new ArrayList<>();
@@ -98,8 +101,6 @@ public class TrackWritingService extends Service implements LocationListener {
                     Location loc2 = new Location("");
                     loc2.setLatitude(avlData.getLatitude());
                     loc2.setLongitude(avlData.getLongitude());
-                    float bearing = loc1.bearingTo(loc2);
-                    int distanceInMeters = (int) loc1.distanceTo(loc2);
 
                     points.set(0, avlData.getLatitude());
                     points.set(1, avlData.getLongitude());
@@ -125,8 +126,8 @@ public class TrackWritingService extends Service implements LocationListener {
                 }
 
 
-                currectLat = avlData.getLatitude();
-                currectLon = avlData.getLongitude();
+                currentLat = avlData.getLatitude();
+                currentLon = avlData.getLongitude();
 
             } catch (Exception x) {
                 Log.i("run Exeption", x.getMessage());
@@ -153,8 +154,8 @@ public class TrackWritingService extends Service implements LocationListener {
             }
         }
 
+
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
         }
         mLocationManager.addNmeaListener(new GpsStatus.NmeaListener() {
             public void onNmeaReceived(long timestamp, String nmea) {
@@ -189,7 +190,6 @@ public class TrackWritingService extends Service implements LocationListener {
             track.setPoints(pointsList);
             ArrayList<Integer> speedList = new ArrayList<>();
             ArrayList<Integer> altitudeList = new ArrayList<>();
-            String length;
             int speed = 0, altitude = 0;
             for (AVLData avlData : lisAvldata) {
                 speedList.add(avlData.getSpeed());
@@ -369,4 +369,7 @@ public class TrackWritingService extends Service implements LocationListener {
         lat = lat;
         lon = lon;
     }
+
+
+
 }

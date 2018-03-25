@@ -24,4 +24,7 @@
     <string name="settings">Settings</string>
     <string name="save">Save</string>
     <string name="take">Take</string>
+    <string name="ok">Continue</string>
+    <string name="enter_odometer_data">Please, enter odometer data:</string>
+
 </resources>

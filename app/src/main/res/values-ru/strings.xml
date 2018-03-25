@@ -25,4 +25,7 @@
     <string name="settings">Настройки</string>
     <string name="save">Сохранить</string>
     <string name="take">Взять</string>
+
+    <string name="ok">Продолжить</string>
+    <string name="enter_odometer_data">Пожалуйста, введите данные с одометра:</string>
 </resources>

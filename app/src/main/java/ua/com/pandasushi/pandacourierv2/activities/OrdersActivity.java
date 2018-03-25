@@ -1,10 +1,14 @@
 package ua.com.pandasushi.pandacourierv2.activities;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
@@ -30,6 +34,10 @@ import ua.com.pandasushi.pandacourierv2.fragments.OrdersFragment;
 
 public class OrdersActivity extends AppCompatActivity {
 
+    private static final int REQUEST_IMAGE_CAPTURE = 1;
+
+    public static Activity fa;
+
     private OrdersFragment ordersFragment;
     private boolean denyBackpress;
     private static Integer courierId;
@@ -41,7 +49,7 @@ public class OrdersActivity extends AppCompatActivity {
 
     private Gson gson = new Gson();
 
-    private String responseFinishShift;
+    private String responseCheck;
 
     Runnable refreshOrdersList = new Runnable() {
         @Override
@@ -71,6 +79,9 @@ public class OrdersActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        fa = this;
+
         setContentView(R.layout.activity_orders);
 
         sharedPreferences = getSharedPreferences("myPref", Context.MODE_PRIVATE);
@@ -103,17 +114,18 @@ public class OrdersActivity extends AppCompatActivity {
                 try {
                     CourierCommand courierCommand = new CourierCommand();
                     courierCommand.setCourierId(courierId);
-                    courierCommand.setCommand(Commands.END_CHANGE);
-                    responseFinishShift = (String) new SocketAsyncTask(OrdersActivity.this).execute(courierCommand).get();
-                    if (responseFinishShift.equals("OK")){
-                        sharedPreferences.edit().putBoolean("startShift", false).apply();
-                        finish();
+                    courierCommand.setCommand(Commands.CHECK);
+                    responseCheck = (String) new SocketAsyncTask(OrdersActivity.this).execute(courierCommand).get();
+                    if (responseCheck.equals("OK")){
+                        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+                        }
                     }
 
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                finish();
                 return true;
             case R.id.chooseMap:
                 Intent intent = new Intent(this, ChooseMapActivity.class);
@@ -162,4 +174,20 @@ public class OrdersActivity extends AppCompatActivity {
         }
         return orders;
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+            Bundle extras = data.getExtras();
+            Intent intent = new Intent(this, OdometerInfoActivity.class);
+            if (extras != null){
+                intent.putExtras(extras);
+            }
+            intent.putExtra("startShift", false);
+            startActivity(intent);
+        }
+    }
+
+
 }

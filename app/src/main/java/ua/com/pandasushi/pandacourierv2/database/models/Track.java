@@ -21,9 +21,7 @@ public class Track implements Serializable {
     private String timeStop;
     private int pointsOnTrack;
     private List<AVLData> avlDataList;
-    private ArrayList<PressedSensor> sensors;
     private List<Points> points;
-    private ArrayList<Point> chartPoits;
 
     public int getPointsOnTrack() {
         return pointsOnTrack;
@@ -32,16 +30,6 @@ public class Track implements Serializable {
     public void setPointsOnTrack(int pointsOnTrack) {
         this.pointsOnTrack = pointsOnTrack;
     }
-
-
-    public ArrayList<Point> getChartPoits() {
-        return chartPoits;
-    }
-
-    public void setChartPoits(ArrayList<Point> chartPoits) {
-        this.chartPoits = chartPoits;
-    }
-
 
     public ArrayList<Point> getAltitudeChart() {
         return altitudeChart;
@@ -59,14 +47,6 @@ public class Track implements Serializable {
 
     public void setPoints(List<Points> points) {
         this.points = points;
-    }
-
-    public ArrayList<PressedSensor> getSensors() {
-        return sensors;
-    }
-
-    public void setSensors(ArrayList<PressedSensor> sensors) {
-        this.sensors = sensors;
     }
 
     public String getMaxSpeed() {
@@ -124,7 +104,6 @@ public class Track implements Serializable {
     public void setTimeStop(String timeStop) {
         this.timeStop = timeStop;
     }
-
 
     public String getName() {
         return name;

@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v7.app.AlertDialog;
@@ -19,6 +20,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.pandasushi.pandacourierv2.R;
 
 import org.apache.http.NameValuePair;
@@ -30,17 +32,22 @@ import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import ua.com.pandasushi.database.common.Commands;
+import ua.com.pandasushi.database.common.Courier;
 import ua.com.pandasushi.database.common.CourierCommand;
 import ua.com.pandasushi.database.common.CourierOrder;
+import ua.com.pandasushi.database.common.Points;
 import ua.com.pandasushi.pandacourierv2.activities.OrdersActivity;
 import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
+import ua.com.pandasushi.pandacourierv2.database.models.AVLData;
 import ua.com.pandasushi.pandacourierv2.mapsmeapi.MWMPoint;
 import ua.com.pandasushi.pandacourierv2.mapsmeapi.MapsWithMeApi;
 import ua.com.pandasushi.pandacourierv2.parser.JSONParser;
+import ua.com.pandasushi.pandacourierv2.services.TrackWritingService;
 
 /**
  * Created by postp on 21.03.2018.
@@ -55,6 +62,8 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
     private String[] mFrom;
     private String maps;
     private SharedPreferences sharedPreferences;
+    private Gson gson = new Gson();
+    private List<CourierOrder> myOrders;
 
     public OnExecuteAndMyOrdersCustomAdapter(Context context, int resource, ArrayList<Map<String, Object>> data, String[] mFrom) {
         super(context, resource, data);
@@ -62,6 +71,15 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
         this.data = data;
         this.layoutResourceId = resource;
         this.mFrom = mFrom;
+    }
+
+    public OnExecuteAndMyOrdersCustomAdapter(Context context, int resource, ArrayList<Map<String, Object>> data, String[] mFrom, List<CourierOrder> myOrders) {
+        super(context, resource, data);
+        this.context = context;
+        this.data = data;
+        this.layoutResourceId = resource;
+        this.mFrom = mFrom;
+        this.myOrders = myOrders;
     }
 
     @Override
@@ -101,8 +119,8 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
         String drink = null;
         String soup = null;
 
-        for (int i = 0; i < chars.length; i++){
-            switch (chars[i]){
+        for (char aChar : chars) {
+            switch (aChar) {
                 case 'П':
                     pizza = "pizza";
                     break;
@@ -152,17 +170,25 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
 
         Boolean onExecute = (Boolean) data.get(position).get(mFrom[1]);
 
-        if (order.getCourierId() == null){
-            row.setBackgroundColor(getContext().getResources().getColor(R.color.white));
+        if (onExecute){
+            if (order.getCourierId() == null){
+                row.setBackgroundColor(getContext().getResources().getColor(R.color.white));
+            } else {
+                row.setBackgroundColor(getContext().getResources().getColor(R.color.grey));
+            }
         } else {
-            row.setBackgroundColor(getContext().getResources().getColor(R.color.grey));
+            if (order.getDeliverTime() == null){
+                row.setBackgroundColor(getContext().getResources().getColor(R.color.white));
+            } else {
+                row.setBackgroundColor(getContext().getResources().getColor(R.color.grey));
+            }
         }
 
         sharedPreferences = getContext().getSharedPreferences("myPref", Context.MODE_PRIVATE);
 
-        maps = sharedPreferences.getString("maps", "GoogleMaps");
+        String myOrdersJson = sharedPreferences.getString("myOrders", "");
 
-        System.out.println("");
+        maps = sharedPreferences.getString("maps", "GoogleMaps");
 
         row.setOnClickListener(view -> {
             if (onExecute){
@@ -188,6 +214,8 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                     if (orders != null){
                                                         sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
                                                     }
+
+                                                    context.startService(new Intent(context, TrackWritingService.class));
                                                 }
                                             } catch (Exception e) {
                                                 e.printStackTrace();
@@ -201,65 +229,101 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                             });
                     builder.create().show();
                 } else {
+                    String courierJson = sharedPreferences.getString("couriers", "");
 
+                    if (!courierJson.equals("")){
+                        List <Courier> couriers = gson.fromJson(courierJson, new TypeToken<List<Courier>>(){}.getType());
+
+                        String courierName = null;
+
+                        for (Courier courier: couriers){
+                            if (order.getCourierId().equals(courier.getId())){
+                                courierName = courier.getName();
+                            }
+                        }
+
+                        if (courierName != null){
+                            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                            builder.setItems(new CharSequence[]
+                                            {courierName},
+                                    new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            switch (which) {
+                                                case 0:
+                                            }
+                                        }
+                                    });
+                            builder.create().show();
+                        }
+
+
+                    }
                 }
             } else {
-                AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                builder.setTitle(getContext().getString(R.string.client_name) + ": " + order.getName());
-                builder.setItems(new CharSequence[]
-                                {getContext().getString(R.string.cancel), getContext().getString(R.string.call),
-                                        getContext().getString(R.string.map), getContext().getString(R.string.delivered)},
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                switch (which) {
-                                    case 0:
-                                        try {
-                                            CourierCommand courierCommand = new CourierCommand();
-                                            courierCommand.setCourierId(null);
-                                            courierCommand.setOrderId(order.getOrderID());
-                                            courierCommand.setCommand(Commands.UPDATE_ORDER);
-                                            String response = (String) new SocketAsyncTask(getContext()).execute(courierCommand).get();
-                                            if (response.equals("OK")){
-                                                CourierCommand courierCommand2 = new CourierCommand();
-                                                courierCommand2.setCourierId(courierId);
-                                                courierCommand2.setCommand(Commands.GET_ORDER_LIST);
-                                                ArrayList<CourierOrder> orders = OrdersActivity.refreshOrderList();
+                if (order.getDeliverTime() == null){
+                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                    builder.setTitle(getContext().getString(R.string.client_name) + ": " + order.getName());
+                    builder.setItems(new CharSequence[]
+                                    {getContext().getString(R.string.cancel), getContext().getString(R.string.call),
+                                            getContext().getString(R.string.map), getContext().getString(R.string.delivered)},
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    switch (which) {
+                                        case 0:
+                                            try {
+                                                CourierCommand courierCommand = new CourierCommand();
+                                                courierCommand.setCourierId(null);
+                                                courierCommand.setOrderId(order.getOrderID());
+                                                courierCommand.setCommand(Commands.UPDATE_ORDER);
+                                                String response = (String) new SocketAsyncTask(getContext()).execute(courierCommand).get();
+                                                if (response.equals("OK")){
+                                                    CourierCommand courierCommand2 = new CourierCommand();
+                                                    courierCommand2.setCourierId(courierId);
+                                                    courierCommand2.setCommand(Commands.GET_ORDER_LIST);
+                                                    ArrayList<CourierOrder> orders = OrdersActivity.refreshOrderList();
 
-                                                Gson gson = new Gson();
-
-                                                if (orders != null){
-                                                    sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
+                                                    if (orders != null){
+                                                        sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
+                                                    }
+                                                }
+                                            } catch (Exception e) {
+                                                e.printStackTrace();
+                                                Toast toast = Toast.makeText(getContext().getApplicationContext(),
+                                                        getContext().getString(R.string.connection_error_cannot_cancel), Toast.LENGTH_LONG);
+                                                toast.show();
+                                            }
+                                            break;
+                                        case 1:
+                                            Intent intent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + order.getPhone()));
+                                            getContext().startActivity(intent);
+                                            break;
+                                        case 2:
+                                            if (maps.equals("MapsME")){
+                                                new OpenMapsMe(order).execute();
+                                            } else if (maps.equals("GoogleMaps")){
+                                                Uri gmmIntentUri = Uri.parse("google.navigation:q=" + order.getStreet() + "+" + order.getHouse() + ",+Lviv+Ukraine");
+                                                Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                                                mapIntent.setPackage("com.google.android.apps.maps");
+                                                if (mapIntent.resolveActivity(context.getPackageManager()) != null) {
+                                                    context.startActivity(mapIntent);
                                                 }
                                             }
-                                        } catch (Exception e) {
-                                            e.printStackTrace();
-                                            Toast toast = Toast.makeText(getContext().getApplicationContext(),
-                                                    getContext().getString(R.string.connection_error_cannot_cancel), Toast.LENGTH_LONG);
-                                            toast.show();
-                                        }
-                                        break;
-                                    case 1:
-                                        Intent intent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + order.getPhone()));
-                                        getContext().startActivity(intent);
-                                        break;
-                                    case 2:
-                                        if (maps.equals("MapsME")){
-                                            new OpenMapsMe(order).execute();
-                                        } else if (maps.equals("GoogleMaps")){
-                                            Uri gmmIntentUri = Uri.parse("google.navigation:q=" + order.getStreet() + "+" + order.getHouse() + ",+Lviv+Ukraine");
-                                            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
-                                            mapIntent.setPackage("com.google.android.apps.maps");
-                                            if (mapIntent.resolveActivity(context.getPackageManager()) != null) {
-                                                context.startActivity(mapIntent);
+                                            break;
+                                        case 3:
+                                            for (CourierOrder courierOrder: myOrders){
+                                                if (courierOrder.getOrderID().equals(order.getOrderID())){
+                                                    courierOrder.setDeliverTime(new Date());
+                                                    courierOrder.setPoint(new Points(TrackWritingService.currentLat, TrackWritingService.currentLon));
+                                                }
                                             }
-                                        }
-                                        break;
-                                    case 3:
-                                        break;
+                                            sharedPreferences.edit().putString("myOrders", gson.toJson(myOrders)).apply();
+                                            context.stopService(new Intent(context, TrackWritingService.class));
+                                            break;
+                                    }
                                 }
-                            }
-                        });
-                builder.create().show();
+                            });
+                    builder.create().show();
+                }
             }
         });
 
@@ -310,8 +374,6 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
             try {
                 JSONArray jArr = result.getJSONArray("array");
                 JSONObject jObj = jArr.getJSONObject(0);
-                System.out.println(jObj.get("lat"));
-                System.out.println(jObj.get("lon"));
                 MWMPoint pnt = new MWMPoint(jObj.getDouble("lat"), jObj.getDouble("lon"), sdf.format(order.getPromiseTime()) + "\n" + order.getStreet() + ", " + order.getHouse() + "/" + order.getApartament(), order.getOrderID()+"", MWMPoint.Style.PlacemarkOrange);
                 pointsToShow.add(pnt);
             } catch (JSONException e) {

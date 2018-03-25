@@ -34,6 +34,7 @@ public class MyOrdersFragment extends Fragment {
     private final String ATTRIBUTE_NAME_COURIER_ID = "courier id";
 
     private List<CourierOrder> orders;
+    private List<CourierOrder> myOrders;
     private ListView listView;
     private ArrayList<Map<String, Object>> data;
 
@@ -120,7 +121,7 @@ public class MyOrdersFragment extends Fragment {
     private void createCustomAdapter(){
         ordersJSON = sharedPreferences.getString("orders", "");
 
-        ArrayList<CourierOrder> myOrders = new ArrayList<>();
+        myOrders = new ArrayList<>();
 
         if (!ordersJSON.equals("")){
             orders = gson.fromJson(ordersJSON, new TypeToken<List<CourierOrder>>(){}.getType());
@@ -149,7 +150,7 @@ public class MyOrdersFragment extends Fragment {
             data.add(m);
         }
 
-        onExecuteAndMyOrdersCustomAdapter = new OnExecuteAndMyOrdersCustomAdapter(getContext(), R.layout.on_execute_and_my_orders_custom_adapter, data, mFrom);
+        onExecuteAndMyOrdersCustomAdapter = new OnExecuteAndMyOrdersCustomAdapter(getContext(), R.layout.on_execute_and_my_orders_custom_adapter, data, mFrom, myOrders);
 
         listView.setAdapter(onExecuteAndMyOrdersCustomAdapter);
     }

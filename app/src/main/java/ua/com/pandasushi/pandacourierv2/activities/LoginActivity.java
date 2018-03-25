@@ -1,7 +1,12 @@
 package ua.com.pandasushi.pandacourierv2.activities;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.os.Build;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -11,6 +16,7 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
 import com.pandasushi.pandacourierv2.R;
 
 import java.util.ArrayList;
@@ -22,10 +28,14 @@ import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
 
 public class LoginActivity extends AppCompatActivity {
 
+    private static final int REQUEST_IMAGE_CAPTURE = 1;
+
+    public static Activity fa;
+
     private Button startShift;
     private EditText passwordET;
     private Spinner spinner;
-    private String responseStartShift;
+    private String responseCheck;
     private String checkPassword;
     private ArrayList<Courier> couriers = new ArrayList<>();
 
@@ -33,10 +43,21 @@ public class LoginActivity extends AppCompatActivity {
     private Integer courierId;
     private boolean isStartShift;
 
+    private Gson gson = new Gson();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION,
+                    },
+                    1);
+
+        }
+
+        fa = this;
 
         startShift = (Button) findViewById(R.id.start_shift);
         passwordET = (EditText) findViewById(R.id.password);
@@ -64,6 +85,8 @@ public class LoginActivity extends AppCompatActivity {
             }
 
             if (couriers != null && !couriers.isEmpty()){
+                String couriersJson = gson.toJson(couriers);
+                sharedPreferences.edit().putString("couriers", couriersJson).apply();
 
                 String[] items = new String[couriers.size()];
 
@@ -82,6 +105,20 @@ public class LoginActivity extends AppCompatActivity {
         } else {
             spinner.setVisibility(View.GONE);
             passwordET.setVisibility(View.GONE);
+
+            try {
+                CourierCommand courierCommand = new CourierCommand();
+                courierCommand.setCourierId(courierId);
+                courierCommand.setCommand(Commands.GET_COURIER_LIST);
+                couriers = (ArrayList<Courier>) new SocketAsyncTask(this).execute(courierCommand).get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            if (couriers != null && !couriers.isEmpty()){
+                String couriersJson = gson.toJson(couriers);
+                sharedPreferences.edit().putString("couriers", couriersJson).apply();
+            }
         }
 
         startShift.setOnClickListener(view -> {
@@ -105,17 +142,18 @@ public class LoginActivity extends AppCompatActivity {
                         try {
                             CourierCommand courierCommand = new CourierCommand();
                             courierCommand.setCourierId(courierId);
-                            courierCommand.setCommand(Commands.START_CHANGE);
-                            responseStartShift = (String) new SocketAsyncTask(this).execute(courierCommand).get();
+                            courierCommand.setCommand(Commands.CHECK);
+                            responseCheck = (String) new SocketAsyncTask(this).execute(courierCommand).get();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
 
-                        if (responseStartShift != null){
-                            if (responseStartShift.equals("OK")){
-                                sharedPreferences.edit().putBoolean("startShift", true).apply();
-                                Intent intent = new Intent(this, OrdersActivity.class);
-                                startActivity(intent);
+                        if (responseCheck != null){
+                            if (responseCheck.equals("OK")){
+                                Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                                if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                                    startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+                                }
                             } else {
                                 Toast toast = Toast.makeText(getApplicationContext(),
                                         getString(R.string.connection_error), Toast.LENGTH_LONG);
@@ -140,17 +178,18 @@ public class LoginActivity extends AppCompatActivity {
                 try {
                     CourierCommand courierCommand = new CourierCommand();
                     courierCommand.setCourierId(courierId);
-                    courierCommand.setCommand(Commands.START_CHANGE);
-                    responseStartShift = (String) new SocketAsyncTask(this).execute(courierCommand).get();
+                    courierCommand.setCommand(Commands.CHECK);
+                    responseCheck = (String) new SocketAsyncTask(this).execute(courierCommand).get();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
 
-                if (responseStartShift != null){
-                    if (responseStartShift.equals("OK")){
-                        sharedPreferences.edit().putBoolean("startShift", true).apply();
-                        Intent intent = new Intent(this, OrdersActivity.class);
-                        startActivity(intent);
+                if (responseCheck != null){
+                    if (responseCheck.equals("OK")){
+                        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+                        }
                     } else {
                         Toast toast = Toast.makeText(getApplicationContext(),
                                 getString(R.string.connection_error), Toast.LENGTH_LONG);
@@ -166,9 +205,22 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+            Bundle extras = data.getExtras();
+            Intent intent = new Intent(this, OdometerInfoActivity.class);
+            if (extras != null){
+                intent.putExtras(extras);
+            }
+            intent.putExtra("startShift", true);
+            startActivity(intent);
+        }
+    }
+
+    @Override
     protected void onStart() {
         super.onStart();
-        responseStartShift = null;
         if (courierId != -1){
             spinner.setVisibility(View.GONE);
             passwordET.setVisibility(View.GONE);
