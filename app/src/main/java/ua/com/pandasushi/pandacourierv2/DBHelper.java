@@ -22,6 +22,10 @@ public class DBHelper extends SQLiteOpenHelper {
                 + "id integer primary key autoincrement, name text,"
                 + "track BLOB);");
 
+        db.execSQL("create table closedOrders ("
+                + "id integer primary key autoincrement, name text,"
+                + "integer lenghtOfTrack);");
+
     }
 
 

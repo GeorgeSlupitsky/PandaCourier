@@ -15,6 +15,7 @@ import com.google.gson.reflect.TypeToken;
 import com.pandasushi.pandacourierv2.R;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,8 @@ public class MyOrdersFragment extends Fragment {
     private final String ATTRIBUTE_NAME_ON_EXECUTE = "on execute";
     private final String ATTRIBUTE_NAME_MAPS = "maps";
     private final String ATTRIBUTE_NAME_COURIER_ID = "courier id";
+
+    public static List<CourierOrder> myOrdersNotDelivered = new ArrayList<>();
 
     private List<CourierOrder> orders;
     private List<CourierOrder> myOrders;
@@ -53,6 +56,10 @@ public class MyOrdersFragment extends Fragment {
     private String ordersJSON;
 
     private String maps;
+
+    private String myOrdersJson;
+
+    private boolean ordersChanged = false;
 
 
     Runnable refreshOrdersList = new Runnable() {
@@ -87,6 +94,21 @@ public class MyOrdersFragment extends Fragment {
         }
     };
 
+//    Runnable refreshOrdersListIfIsDelivered = new Runnable() {
+//        @Override
+//        public void run() {
+//            String changeMyOrders = sharedPreferences.getString("myOrders", "");
+//            if (!changeMyOrders.equals("")){
+//                if (!changeMyOrders.equals(myOrdersJson)){
+//                    myOrders = gson.fromJson(changeMyOrders, new TypeToken<List<CourierOrder>>(){}.getType());
+//                    ordersChanged = true;
+//                    createCustomAdapter();
+//                }
+//            }
+//            handler.postDelayed(this, 1000);
+//        }
+//    };
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.fragment_my_orders, container, false);
@@ -104,6 +126,7 @@ public class MyOrdersFragment extends Fragment {
         handler.post(refreshOrdersList);
         handler.postDelayed(refreshOrdersListIfSPOrdersChanged,3000);
         handler.postDelayed(refreshOrdersListIfSPMapsChanged,3000);
+//        handler.postDelayed(refreshOrdersListIfIsDelivered, 3000);
 
         return rootView;
     }
@@ -116,26 +139,43 @@ public class MyOrdersFragment extends Fragment {
         handler.removeCallbacks(refreshOrdersList);
         handler.removeCallbacks(refreshOrdersListIfSPOrdersChanged);
         handler.removeCallbacks(refreshOrdersListIfSPMapsChanged);
+//        handler.removeCallbacks(refreshOrdersListIfIsDelivered);
     }
 
-    private void createCustomAdapter(){
+    private synchronized void createCustomAdapter(){
         ordersJSON = sharedPreferences.getString("orders", "");
-
-        myOrders = new ArrayList<>();
 
         if (!ordersJSON.equals("")){
             orders = gson.fromJson(ordersJSON, new TypeToken<List<CourierOrder>>(){}.getType());
         }
 
-        if (orders != null){
-            for (CourierOrder order: orders){
-                if (order.getCourierId() != null){
-                    if (order.getCourierId().equals(courierId)){
-                        myOrders.add(order);
+        if (!ordersChanged){
+            if (orders != null){
+                myOrders = new ArrayList<>();
+                for (CourierOrder order: orders){
+                    if (order.getCourierId() != null){
+                        if (order.getCourierId().equals(courierId)){
+                            myOrders.add(order);
+                        }
                     }
                 }
             }
         }
+
+        if (myOrders != null){
+            Collections.sort(myOrders, (courierOrder, courierOrder2) -> {
+                if (courierOrder.getDeliverTime() != null){
+                    if (courierOrder2.getDeliverTime() == null){
+                        return 1;
+                    }
+                    return courierOrder2.getDeliverTime().compareTo(courierOrder.getDeliverTime());
+                } else {
+                    return Integer.MIN_VALUE;
+                }
+            });
+        }
+
+        myOrdersJson = gson.toJson(myOrders);
 
         data = new ArrayList<>();
 

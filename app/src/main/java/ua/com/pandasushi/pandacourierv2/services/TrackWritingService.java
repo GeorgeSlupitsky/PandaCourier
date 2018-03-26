@@ -53,12 +53,13 @@ public class TrackWritingService extends Service implements LocationListener {
     private ArrayList<AVLData> lisAvldata = new ArrayList<>();
     public static Double currentLat, currentLon;
     private boolean isStart = false;
-    private int lenght, fullLenght;
+    private double lenght, fullLenght;
     private ArrayList<Points> pointsList = new ArrayList<>();
     private ArrayList<Double> points = new ArrayList<>();
     private DBHelper dbHelper;
     private String timeStart, timeStop;
     private Gson gson;
+    public static String lenghtOfTrack;
 
     Runnable tracking = new Runnable() {
         public void run() {
@@ -211,6 +212,7 @@ public class TrackWritingService extends Service implements LocationListener {
             track.setAvlDataList(lisAvldata);
             track.setPointsOnTrack(pointsOnTrack);
             track.setTrackLenght(String.valueOf(fullLenght));
+            lenghtOfTrack = String.valueOf(fullLenght);
             cv.put("track", gson.toJson(track).getBytes());
             db.insert("trackdata", null, cv);
         }

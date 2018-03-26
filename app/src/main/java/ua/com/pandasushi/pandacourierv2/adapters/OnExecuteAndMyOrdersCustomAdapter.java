@@ -7,7 +7,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v7.app.AlertDialog;
@@ -43,7 +42,7 @@ import ua.com.pandasushi.database.common.CourierOrder;
 import ua.com.pandasushi.database.common.Points;
 import ua.com.pandasushi.pandacourierv2.activities.OrdersActivity;
 import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
-import ua.com.pandasushi.pandacourierv2.database.models.AVLData;
+import ua.com.pandasushi.pandacourierv2.fragments.MyOrdersFragment;
 import ua.com.pandasushi.pandacourierv2.mapsmeapi.MWMPoint;
 import ua.com.pandasushi.pandacourierv2.mapsmeapi.MapsWithMeApi;
 import ua.com.pandasushi.pandacourierv2.parser.JSONParser;
@@ -186,8 +185,6 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
 
         sharedPreferences = getContext().getSharedPreferences("myPref", Context.MODE_PRIVATE);
 
-        String myOrdersJson = sharedPreferences.getString("myOrders", "");
-
         maps = sharedPreferences.getString("maps", "GoogleMaps");
 
         row.setOnClickListener(view -> {
@@ -215,7 +212,11 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                         sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
                                                     }
 
-                                                    context.startService(new Intent(context, TrackWritingService.class));
+                                                    if (MyOrdersFragment.myOrdersNotDelivered.size() == 0){
+                                                        context.startService(new Intent(context, TrackWritingService.class));
+                                                    }
+
+                                                    MyOrdersFragment.myOrdersNotDelivered.add(order);
                                                 }
                                             } catch (Exception e) {
                                                 e.printStackTrace();
@@ -285,6 +286,16 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                     if (orders != null){
                                                         sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
                                                     }
+
+                                                    for (CourierOrder courierOrder: MyOrdersFragment.myOrdersNotDelivered){
+                                                        if (courierOrder.getOrderID().equals(order.getOrderID())){
+                                                            MyOrdersFragment.myOrdersNotDelivered.remove(courierOrder);
+                                                        }
+                                                    }
+
+                                                    if (MyOrdersFragment.myOrdersNotDelivered.size() == 0){
+                                                        context.stopService(new Intent(context, TrackWritingService.class));
+                                                    }
                                                 }
                                             } catch (Exception e) {
                                                 e.printStackTrace();
@@ -314,10 +325,43 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                 if (courierOrder.getOrderID().equals(order.getOrderID())){
                                                     courierOrder.setDeliverTime(new Date());
                                                     courierOrder.setPoint(new Points(TrackWritingService.currentLat, TrackWritingService.currentLon));
+
+                                                    try {
+                                                        CourierCommand courierCommand = new CourierCommand();
+                                                        courierCommand.setCourierId(courierId);
+                                                        courierCommand.setOrderId(order.getOrderID());
+                                                        courierCommand.setDeliverTime(courierOrder.getDeliverTime());
+                                                        courierCommand.setCommand(Commands.UPDATE_ORDER);
+                                                        String response = (String) new SocketAsyncTask(getContext()).execute(courierCommand).get();
+                                                        if (response.equals("OK")){
+                                                            CourierCommand courierCommand2 = new CourierCommand();
+                                                            courierCommand2.setCourierId(courierId);
+                                                            courierCommand2.setCommand(Commands.GET_ORDER_LIST);
+                                                            ArrayList<CourierOrder> orders = OrdersActivity.refreshOrderList();
+
+                                                            if (orders != null){
+                                                                sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
+                                                            }
+                                                        }
+
+
+                                                    } catch (Exception e){
+                                                        sharedPreferences.edit().putString("myOrders", gson.toJson(myOrders)).apply();
+                                                    }
                                                 }
                                             }
-                                            sharedPreferences.edit().putString("myOrders", gson.toJson(myOrders)).apply();
-                                            context.stopService(new Intent(context, TrackWritingService.class));
+
+                                            for (CourierOrder courierOrder: MyOrdersFragment.myOrdersNotDelivered){
+                                                if (courierOrder.getOrderID().equals(order.getOrderID())){
+                                                    MyOrdersFragment.myOrdersNotDelivered.remove(courierOrder);
+                                                }
+                                            }
+
+
+                                            //stop service when track saved on server
+                                            if (MyOrdersFragment.myOrdersNotDelivered.size() == 0){
+                                                context.stopService(new Intent(context, TrackWritingService.class));
+                                            }
                                             break;
                                     }
                                 }
