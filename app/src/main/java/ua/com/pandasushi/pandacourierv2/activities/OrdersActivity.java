@@ -26,6 +26,7 @@ import ua.com.pandasushi.database.common.Commands;
 import ua.com.pandasushi.database.common.CourierCommand;
 import ua.com.pandasushi.database.common.CourierOrder;
 import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
+import ua.com.pandasushi.pandacourierv2.fragments.MyOrdersFragment;
 import ua.com.pandasushi.pandacourierv2.fragments.OrdersFragment;
 
 /**
@@ -48,8 +49,6 @@ public class OrdersActivity extends AppCompatActivity {
     private Handler handler = new Handler();
 
     private Gson gson = new Gson();
-
-    private String responseCheck;
 
     Runnable refreshOrdersList = new Runnable() {
         @Override
@@ -111,20 +110,15 @@ public class OrdersActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.finishShift:
-                try {
-                    CourierCommand courierCommand = new CourierCommand();
-                    courierCommand.setCourierId(courierId);
-                    courierCommand.setCommand(Commands.CHECK);
-                    responseCheck = (String) new SocketAsyncTask(OrdersActivity.this).execute(courierCommand).get();
-                    if (responseCheck.equals("OK")){
-                        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-                            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
-                        }
+                if (MyOrdersFragment.myOrdersNotDelivered.size() == 0){
+                    Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                    if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                        startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
                     }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
+                } else {
+                    Toast toast = Toast.makeText(getApplicationContext(),
+                            getString(R.string.dont_delievered_orders), Toast.LENGTH_LONG);
+                    toast.show();
                 }
                 return true;
             case R.id.chooseMap:

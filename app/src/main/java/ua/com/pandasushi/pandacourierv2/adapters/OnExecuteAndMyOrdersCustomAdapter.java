@@ -7,8 +7,11 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,6 +35,7 @@ import org.json.JSONObject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -40,8 +44,10 @@ import ua.com.pandasushi.database.common.Courier;
 import ua.com.pandasushi.database.common.CourierCommand;
 import ua.com.pandasushi.database.common.CourierOrder;
 import ua.com.pandasushi.database.common.Points;
+import ua.com.pandasushi.pandacourierv2.DBHelper;
 import ua.com.pandasushi.pandacourierv2.activities.OrdersActivity;
 import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
+import ua.com.pandasushi.pandacourierv2.database.models.Track;
 import ua.com.pandasushi.pandacourierv2.fragments.MyOrdersFragment;
 import ua.com.pandasushi.pandacourierv2.mapsmeapi.MWMPoint;
 import ua.com.pandasushi.pandacourierv2.mapsmeapi.MapsWithMeApi;
@@ -63,6 +69,74 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
     private SharedPreferences sharedPreferences;
     private Gson gson = new Gson();
     private List<CourierOrder> myOrders;
+    private Handler handler = new Handler();
+    private Integer courierId;
+    private DBHelper dbHelper;
+
+    private Runnable requestForSavingTrackAndMyDeliveredOrders = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                CourierCommand courierCommand = new CourierCommand();
+                courierCommand.setCourierId(courierId);
+                courierCommand.setCommand(Commands.CHECK);
+                String response = (String) new SocketAsyncTask(getContext()).execute(courierCommand).get();
+                if (response.equals("OK")){
+                    context.stopService(new Intent(context, TrackWritingService.class));
+
+                    String response2 = null;
+                    for (CourierOrder order: myOrders){
+                        CourierCommand courierCommand2 = new CourierCommand();
+                        courierCommand2.setCourierId(courierId);
+                        courierCommand2.setOrderId(order.getOrderID());
+                        courierCommand2.setCommand(Commands.UPDATE_ORDER);
+                        response2 = (String) new SocketAsyncTask(getContext()).execute(courierCommand2).get();
+                    }
+                    if (response2 != null){
+                        if (response2.equals("OK")){
+                            CourierCommand courierCommand3 = new CourierCommand();
+                            courierCommand3.setCourierId(courierId);
+                            courierCommand3.setCommand(Commands.GET_ORDER_LIST);
+                            ArrayList<CourierOrder> orders = OrdersActivity.refreshOrderList();
+
+                            if (orders != null){
+                                sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
+                            }
+                        }
+                    }
+
+                    Track track = null;
+                    SQLiteDatabase db = dbHelper.getWritableDatabase();
+                    Cursor cursor = db.query("trackdata", null, null, null, null, null, null);
+                    if (cursor.moveToFirst()) {
+                        byte[] blob = cursor.getBlob(cursor.getColumnIndex("track"));
+                        String json = new String(blob);
+                        Gson gson = new Gson();
+                        track = gson.fromJson(json, new TypeToken<Track>(){}.getType());
+                    }
+                    cursor.close();
+                    db.close();
+
+                    if (track != null){
+                        CourierCommand courierCommand4 = new CourierCommand();
+                        courierCommand4.setCourierId(courierId);
+                        courierCommand4.setCommand(Commands.SAVE_TRACK);
+                        String response3 = (String) new SocketAsyncTask(getContext()).execute(courierCommand4).get();
+                        if (response3.equals("OK")){
+                            handler.removeCallbacks(this);
+                        }
+                    } else {
+                        Toast toast = Toast.makeText(getContext().getApplicationContext(),
+                                getContext().getString(R.string.no_saved_tracks), Toast.LENGTH_LONG);
+                        toast.show();
+                    }
+                }
+
+            } catch (Exception e){
+                handler.postDelayed(this, 1000);
+            }
+        }
+    };
 
     public OnExecuteAndMyOrdersCustomAdapter(Context context, int resource, ArrayList<Map<String, Object>> data, String[] mFrom) {
         super(context, resource, data);
@@ -84,6 +158,8 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         View row = convertView;
+
+        dbHelper = new DBHelper(context);
 
         if (row == null) {
             LayoutInflater inflater = ((Activity) context).getLayoutInflater();
@@ -107,7 +183,7 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
 
         String dishes = order.getDishes();
 
-        Integer courierId = (Integer) data.get(position).get(mFrom[3]);
+        courierId = (Integer) data.get(position).get(mFrom[3]);
 
         char[] chars = dishes.toCharArray();
 
@@ -217,6 +293,10 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                     }
 
                                                     MyOrdersFragment.myOrdersNotDelivered.add(order);
+
+                                                    String myOrdersND = gson.toJson(MyOrdersFragment.myOrdersNotDelivered);
+
+                                                    sharedPreferences.edit().putString("myOrdersNotDelivered", myOrdersND).apply();
                                                 }
                                             } catch (Exception e) {
                                                 e.printStackTrace();
@@ -287,9 +367,12 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                         sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
                                                     }
 
-                                                    for (CourierOrder courierOrder: MyOrdersFragment.myOrdersNotDelivered){
-                                                        if (courierOrder.getOrderID().equals(order.getOrderID())){
-                                                            MyOrdersFragment.myOrdersNotDelivered.remove(courierOrder);
+                                                    Iterator itr = MyOrdersFragment.myOrdersNotDelivered.iterator();
+                                                    while (itr.hasNext())
+                                                    {
+                                                        CourierOrder courierOrderToRemove = (CourierOrder) itr.next();
+                                                        if (courierOrderToRemove.getOrderID().equals(order.getOrderID())){
+                                                            itr.remove();
                                                         }
                                                     }
 
@@ -342,25 +425,44 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                             if (orders != null){
                                                                 sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
                                                             }
+
+                                                            Iterator itr = MyOrdersFragment.myOrdersNotDelivered.iterator();
+                                                            while (itr.hasNext())
+                                                            {
+                                                                CourierOrder courierOrderToRemove = (CourierOrder) itr.next();
+                                                                if (courierOrderToRemove.getOrderID().equals(order.getOrderID())){
+                                                                    itr.remove();
+                                                                }
+                                                            }
+
+                                                            String myOrdersND = gson.toJson(MyOrdersFragment.myOrdersNotDelivered);
+
+                                                            sharedPreferences.edit().putString("myOrdersNotDelivered", myOrdersND).apply();
+
                                                         }
 
 
                                                     } catch (Exception e){
                                                         sharedPreferences.edit().putString("myOrders", gson.toJson(myOrders)).apply();
+
+                                                        Iterator itr = MyOrdersFragment.myOrdersNotDelivered.iterator();
+                                                        while (itr.hasNext())
+                                                        {
+                                                            CourierOrder courierOrderToRemove = (CourierOrder) itr.next();
+                                                            if (courierOrderToRemove.getOrderID().equals(order.getOrderID())){
+                                                                itr.remove();
+
+                                                                String myOrdersND = gson.toJson(MyOrdersFragment.myOrdersNotDelivered);
+
+                                                                sharedPreferences.edit().putString("myOrdersNotDelivered", myOrdersND).apply();
+                                                            }
+                                                        }
+
+                                                        if (MyOrdersFragment.myOrdersNotDelivered.size() == 0){
+                                                            handler.post(requestForSavingTrackAndMyDeliveredOrders);
+                                                        }
                                                     }
                                                 }
-                                            }
-
-                                            for (CourierOrder courierOrder: MyOrdersFragment.myOrdersNotDelivered){
-                                                if (courierOrder.getOrderID().equals(order.getOrderID())){
-                                                    MyOrdersFragment.myOrdersNotDelivered.remove(courierOrder);
-                                                }
-                                            }
-
-
-                                            //stop service when track saved on server
-                                            if (MyOrdersFragment.myOrdersNotDelivered.size() == 0){
-                                                context.stopService(new Intent(context, TrackWritingService.class));
                                             }
                                             break;
                                     }

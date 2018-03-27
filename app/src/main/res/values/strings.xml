@@ -27,4 +27,7 @@
     <string name="ok">Continue</string>
     <string name="enter_odometer_data">Please, enter odometer data:</string>
 
+    <string name="no_saved_tracks">There are no saved tracks</string>
+    <string name="dont_delievered_orders">You have don`t delivered orders. Please deliver them and after that try to close shift again</string>
+
 </resources>

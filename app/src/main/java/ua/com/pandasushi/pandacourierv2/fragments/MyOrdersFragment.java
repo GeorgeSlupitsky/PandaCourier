@@ -34,7 +34,7 @@ public class MyOrdersFragment extends Fragment {
     private final String ATTRIBUTE_NAME_MAPS = "maps";
     private final String ATTRIBUTE_NAME_COURIER_ID = "courier id";
 
-    public static List<CourierOrder> myOrdersNotDelivered = new ArrayList<>();
+    public static List<CourierOrder> myOrdersNotDelivered;
 
     private List<CourierOrder> orders;
     private List<CourierOrder> myOrders;
@@ -121,6 +121,14 @@ public class MyOrdersFragment extends Fragment {
 
         courierId = sharedPreferences.getInt("courierId", -1);
 
+        String myOrdersND = sharedPreferences.getString("myOrdersNotDelivered", "");
+
+        myOrdersNotDelivered = gson.fromJson(myOrdersND, new TypeToken<List<CourierOrder>>(){}.getType());
+
+        if (myOrdersNotDelivered == null){
+            myOrdersNotDelivered = new ArrayList<>();
+        }
+
         createCustomAdapter();
 
         handler.post(refreshOrdersList);
@@ -150,8 +158,8 @@ public class MyOrdersFragment extends Fragment {
         }
 
         if (!ordersChanged){
+            myOrders = new ArrayList<>();
             if (orders != null){
-                myOrders = new ArrayList<>();
                 for (CourierOrder order: orders){
                     if (order.getCourierId() != null){
                         if (order.getCourierId().equals(courierId)){

@@ -1,5 +1,7 @@
 package ua.com.pandasushi.pandacourierv2.activities;
 
+import android.app.ActivityManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -9,12 +11,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.pandasushi.pandacourierv2.R;
 
 import ua.com.pandasushi.database.common.Commands;
 import ua.com.pandasushi.database.common.CourierCommand;
 import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
+import ua.com.pandasushi.pandacourierv2.fragments.MyOrdersFragment;
+import ua.com.pandasushi.pandacourierv2.services.TrackWritingService;
 
 /**
  * Created by postp on 25.03.2018.
@@ -98,18 +103,28 @@ public class OdometerInfoActivity extends AppCompatActivity {
 
                     if (responseShift != null){
                         if (responseShift.equals("OK")){
+                            sharedPreferences.edit().putBoolean("correctCloseShift", true).apply();
                             sharedPreferences.edit().putBoolean("startShift", false).apply();
                             Intent intent = new Intent(OdometerInfoActivity.this, LoginActivity.class);
                             startActivity(intent);
                             OrdersActivity.fa.finish();
                             finish();
                         }
+                    } else {
+                        sharedPreferences.edit().putBoolean("correctCloseShift", false).apply();
+                        //TODO save odometer data and photo
+
+                        stopService(new Intent(getApplicationContext(), TrackWritingService.class));
+                        sharedPreferences.edit().putBoolean("startShift", false).apply();
+                        Intent intent = new Intent(OdometerInfoActivity.this, LoginActivity.class);
+                        startActivity(intent);
+                        OrdersActivity.fa.finish();
+                        finish();
                     }
                 }
 
             }
         });
     }
-
 
 }

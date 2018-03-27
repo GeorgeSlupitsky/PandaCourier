@@ -42,6 +42,7 @@ public class LoginActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private Integer courierId;
     private boolean isStartShift;
+    private boolean isCorrectCloseShift;
 
     private Gson gson = new Gson();
 
@@ -71,6 +72,8 @@ public class LoginActivity extends AppCompatActivity {
             Intent intent = new Intent(this, OrdersActivity.class);
             startActivity(intent);
         }
+
+        isCorrectCloseShift = sharedPreferences.getBoolean("correctCloseShift", true);
 
         courierId = sharedPreferences.getInt("courierId", -1);
 
@@ -186,6 +189,26 @@ public class LoginActivity extends AppCompatActivity {
 
                 if (responseCheck != null){
                     if (responseCheck.equals("OK")){
+                        if(!isCorrectCloseShift){
+                            String responseShift = null;
+                            try {
+                                //TODO get odometer info, photo and last track info
+                                CourierCommand courierCommand = new CourierCommand();
+                                courierCommand.setCourierId(courierId);
+                                courierCommand.setCommand(Commands.END_CHANGE);
+                                responseShift = (String) new SocketAsyncTask(LoginActivity.this).execute(courierCommand).get();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                            if (responseShift != null){
+                                if (responseShift.equals("OK")){
+                                    sharedPreferences.edit().putBoolean("correctCloseShift", true).apply();
+                                    sharedPreferences.edit().putBoolean("startShift", false).apply();
+                                }
+                            }
+                        }
+
                         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
                             startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);

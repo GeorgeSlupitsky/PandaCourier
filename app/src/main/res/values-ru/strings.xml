@@ -28,4 +28,7 @@
 
     <string name="ok">Продолжить</string>
     <string name="enter_odometer_data">Пожалуйста, введите данные с одометра:</string>
+
+    <string name="no_saved_tracks">Нет сохраненых треков</string>
+    <string name="dont_delievered_orders">У Вас есть не доставленные заказы. Пожалуйста, доставьте их и после этого попробуйте закрыть смену ещё раз</string>
 </resources>
