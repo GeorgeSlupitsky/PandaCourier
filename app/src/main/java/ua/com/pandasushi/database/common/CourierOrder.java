@@ -3,6 +3,8 @@ package ua.com.pandasushi.database.common;
 import java.io.Serializable;
 import java.util.Date;
 
+import ua.com.pandasushi.database.common.gps.models.Points;
+
 public class CourierOrder implements Serializable {
 
 
@@ -24,6 +26,8 @@ public class CourierOrder implements Serializable {
     private Date promiseTime; //обіцяний час, після нього йде компенсація
     private Integer finalCost; //сума до оплати
     private String dishes; // строка виду «РПНС», кожна буква відповідає що має бути в замовленні, відображатись буде значками
+    private String comment;
+    private Boolean onTime;
     //Кінець блоку зі статичними даними
 
     //Оновлюється в момент коли кур'єр бере або відміняє замовлення
@@ -36,6 +40,22 @@ public class CourierOrder implements Serializable {
     private Points point; // точка в якій був кур'єр коли натиснув кнопку доставлено
     //Кінець
 
+
+    public Boolean getOnTime() {
+        return onTime;
+    }
+
+    public void setOnTime(Boolean onTime) {
+        this.onTime = onTime;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
 
     public Long getOrderID() {
         return orderID;
@@ -172,4 +192,5 @@ public class CourierOrder implements Serializable {
     public void setPoint(Points point) {
         this.point = point;
     }
+
 }

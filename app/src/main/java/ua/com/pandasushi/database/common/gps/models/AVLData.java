@@ -1,8 +1,9 @@
-package ua.com.pandasushi.pandacourierv2.database.models;
+package ua.com.pandasushi.database.common.gps.models;
 
 
+import java.io.Serializable;
 
-public class AVLData {
+public class AVLData implements Serializable{
 
     private long timestamp;
     private double longitude;

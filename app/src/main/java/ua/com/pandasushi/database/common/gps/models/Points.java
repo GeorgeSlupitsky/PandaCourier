@@ -1,9 +1,11 @@
-package ua.com.pandasushi.pandacourierv2.database.models;
+package ua.com.pandasushi.database.common.gps.models;
+
+import java.io.Serializable;
 
 /**
  * Created by oleg on 13.06.16.
  */
-public class Points{
+public class Points implements Serializable{
     private String lat;
     private String lon;
 

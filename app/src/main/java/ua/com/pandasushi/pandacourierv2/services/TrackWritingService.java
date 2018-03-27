@@ -1,14 +1,11 @@
 package ua.com.pandasushi.pandacourierv2.services;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Point;
 import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
@@ -31,9 +28,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import ua.com.pandasushi.pandacourierv2.database.models.AVLData;
-import ua.com.pandasushi.pandacourierv2.database.models.Points;
-import ua.com.pandasushi.pandacourierv2.database.models.Track;
+import ua.com.pandasushi.database.common.gps.models.AVLData;
+import ua.com.pandasushi.database.common.gps.models.Points;
+import ua.com.pandasushi.database.common.gps.models.Track;
 
 /**
  * Created by postp on 18.03.2018.
@@ -74,7 +71,7 @@ public class TrackWritingService extends Service implements LocationListener {
                 }
 
                 int minspeed = 3;
-                int maxspeed = 160;
+                int maxspeed = 180;
 
                 if (avlData.getLongitude() != 0.0 & avlData.getSpeed() >= minspeed & avlData.getSpeed() <= maxspeed) {
                     if (points.size() == 0) {
@@ -184,7 +181,6 @@ public class TrackWritingService extends Service implements LocationListener {
             String name = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date());
             cv.put("name", name);
             Track track = new Track();
-            track.setTime("timeStop - timeStart");
             track.setName(name);
             track.setTimeStart(timeStart);
             track.setTimeStop(timeStop);

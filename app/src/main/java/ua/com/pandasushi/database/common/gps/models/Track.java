@@ -1,4 +1,4 @@
-package ua.com.pandasushi.pandacourierv2.database.models;
+package ua.com.pandasushi.database.common.gps.models;
 
 import android.graphics.Point;
 
@@ -11,7 +11,6 @@ import java.util.List;
  */
 public class Track implements Serializable {
     private String name;
-    private String time;
     private String maxSpeed;
     private String averageSpeed;
     private String averageAltitude;
@@ -111,14 +110,6 @@ public class Track implements Serializable {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getTime() {
-        return time;
-    }
-
-    public void setTime(String time) {
-        this.time = time;
     }
 
     public List<AVLData> getAvlDataList() {

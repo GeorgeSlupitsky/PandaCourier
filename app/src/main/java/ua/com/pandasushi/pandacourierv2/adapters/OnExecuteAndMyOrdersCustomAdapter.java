@@ -43,11 +43,11 @@ import ua.com.pandasushi.database.common.Commands;
 import ua.com.pandasushi.database.common.Courier;
 import ua.com.pandasushi.database.common.CourierCommand;
 import ua.com.pandasushi.database.common.CourierOrder;
-import ua.com.pandasushi.database.common.Points;
+import ua.com.pandasushi.database.common.gps.models.Points;
 import ua.com.pandasushi.pandacourierv2.DBHelper;
 import ua.com.pandasushi.pandacourierv2.activities.OrdersActivity;
 import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
-import ua.com.pandasushi.pandacourierv2.database.models.Track;
+import ua.com.pandasushi.database.common.gps.models.Track;
 import ua.com.pandasushi.pandacourierv2.fragments.MyOrdersFragment;
 import ua.com.pandasushi.pandacourierv2.mapsmeapi.MWMPoint;
 import ua.com.pandasushi.pandacourierv2.mapsmeapi.MapsWithMeApi;
@@ -407,7 +407,7 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                             for (CourierOrder courierOrder: myOrders){
                                                 if (courierOrder.getOrderID().equals(order.getOrderID())){
                                                     courierOrder.setDeliverTime(new Date());
-                                                    courierOrder.setPoint(new Points(TrackWritingService.currentLat, TrackWritingService.currentLon));
+                                                    courierOrder.setPoint(new Points(String.valueOf(TrackWritingService.currentLat), String.valueOf(TrackWritingService.currentLon)));
 
                                                     try {
                                                         CourierCommand courierCommand = new CourierCommand();
@@ -417,6 +417,7 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                         courierCommand.setCommand(Commands.UPDATE_ORDER);
                                                         String response = (String) new SocketAsyncTask(getContext()).execute(courierCommand).get();
                                                         if (response.equals("OK")){
+                                                            sharedPreferences.edit().putBoolean("connectionForMyOrders", true).apply();
                                                             CourierCommand courierCommand2 = new CourierCommand();
                                                             courierCommand2.setCourierId(courierId);
                                                             courierCommand2.setCommand(Commands.GET_ORDER_LIST);
@@ -443,6 +444,7 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
 
 
                                                     } catch (Exception e){
+                                                        sharedPreferences.edit().putBoolean("connectionForMyOrders", false).apply();
                                                         sharedPreferences.edit().putString("myOrders", gson.toJson(myOrders)).apply();
 
                                                         Iterator itr = MyOrdersFragment.myOrdersNotDelivered.iterator();

@@ -57,9 +57,7 @@ public class MyOrdersFragment extends Fragment {
 
     private String maps;
 
-    private String myOrdersJson;
-
-    private boolean ordersChanged = false;
+    boolean isConnected = true;
 
 
     Runnable refreshOrdersList = new Runnable() {
@@ -94,20 +92,13 @@ public class MyOrdersFragment extends Fragment {
         }
     };
 
-//    Runnable refreshOrdersListIfIsDelivered = new Runnable() {
-//        @Override
-//        public void run() {
-//            String changeMyOrders = sharedPreferences.getString("myOrders", "");
-//            if (!changeMyOrders.equals("")){
-//                if (!changeMyOrders.equals(myOrdersJson)){
-//                    myOrders = gson.fromJson(changeMyOrders, new TypeToken<List<CourierOrder>>(){}.getType());
-//                    ordersChanged = true;
-//                    createCustomAdapter();
-//                }
-//            }
-//            handler.postDelayed(this, 1000);
-//        }
-//    };
+    Runnable refreshOrdersListIfIsDelivered = new Runnable() {
+        @Override
+        public void run() {
+            isConnected = sharedPreferences.getBoolean("connectionForMyOrders", true);
+            handler.postDelayed(this, 1000);
+        }
+    };
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -121,6 +112,8 @@ public class MyOrdersFragment extends Fragment {
 
         courierId = sharedPreferences.getInt("courierId", -1);
 
+        myOrders = new ArrayList<>();
+
         String myOrdersND = sharedPreferences.getString("myOrdersNotDelivered", "");
 
         myOrdersNotDelivered = gson.fromJson(myOrdersND, new TypeToken<List<CourierOrder>>(){}.getType());
@@ -132,9 +125,9 @@ public class MyOrdersFragment extends Fragment {
         createCustomAdapter();
 
         handler.post(refreshOrdersList);
+        handler.post(refreshOrdersListIfIsDelivered);
+        handler.postDelayed(refreshOrdersListIfSPMapsChanged,2000);
         handler.postDelayed(refreshOrdersListIfSPOrdersChanged,3000);
-        handler.postDelayed(refreshOrdersListIfSPMapsChanged,3000);
-//        handler.postDelayed(refreshOrdersListIfIsDelivered, 3000);
 
         return rootView;
     }
@@ -147,7 +140,7 @@ public class MyOrdersFragment extends Fragment {
         handler.removeCallbacks(refreshOrdersList);
         handler.removeCallbacks(refreshOrdersListIfSPOrdersChanged);
         handler.removeCallbacks(refreshOrdersListIfSPMapsChanged);
-//        handler.removeCallbacks(refreshOrdersListIfIsDelivered);
+        handler.removeCallbacks(refreshOrdersListIfIsDelivered);
     }
 
     private synchronized void createCustomAdapter(){
@@ -157,7 +150,13 @@ public class MyOrdersFragment extends Fragment {
             orders = gson.fromJson(ordersJSON, new TypeToken<List<CourierOrder>>(){}.getType());
         }
 
-        if (!ordersChanged){
+        if (!isConnected){
+            String myOrdersJSON = sharedPreferences.getString("myOrders", "");
+            if (!myOrdersJSON.equals("")) {
+                myOrders = gson.fromJson(myOrdersJSON, new TypeToken<List<CourierOrder>>() {
+                }.getType());
+            }
+        } else {
             myOrders = new ArrayList<>();
             if (orders != null){
                 for (CourierOrder order: orders){
@@ -182,8 +181,6 @@ public class MyOrdersFragment extends Fragment {
                 }
             });
         }
-
-        myOrdersJson = gson.toJson(myOrders);
 
         data = new ArrayList<>();
 
