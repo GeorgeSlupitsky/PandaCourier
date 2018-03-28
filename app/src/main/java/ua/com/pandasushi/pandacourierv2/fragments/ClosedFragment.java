@@ -1,26 +1,27 @@
 package ua.com.pandasushi.pandacourierv2.fragments;
 
-import android.content.Context;
-import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.pandasushi.pandacourierv2.R;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import ua.com.pandasushi.database.common.Commands;
-import ua.com.pandasushi.database.common.CourierCommand;
-import ua.com.pandasushi.database.common.CourierOrder;
-import ua.com.pandasushi.pandacourierv2.activities.OrdersActivity;
-import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
+import ua.com.pandasushi.database.common.gps.models.Track;
+import ua.com.pandasushi.pandacourierv2.DBHelper;
+import ua.com.pandasushi.pandacourierv2.adapters.ClosedOrdersAdapter;
 
 /**
  * Created by User9 on 21.03.2018.
@@ -28,25 +29,43 @@ import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
 
 public class ClosedFragment extends Fragment{
 
-    private List<CourierOrder> orders;
+    private final String ATTRIBUTE_NAME_TRACK = "track";
 
+    private DBHelper dbHelper;
+    private List<Track> trackList;
     private Handler handler = new Handler();
+    private ClosedOrdersAdapter closedOrdersAdapter;
+    private ListView listView;
+    private ArrayList<Map<String, Object>> data;
+    private String [] mFrom = {ATTRIBUTE_NAME_TRACK};
 
-    private SharedPreferences sharedPreferences;
-
-    private Gson gson = new Gson();
-
-
-    Runnable refreshOrdersList = new Runnable() {
+    Runnable refresh = new Runnable() {
         @Override
         public void run() {
-            String ordersJSON = sharedPreferences.getString("orders", "");
+            trackList = new ArrayList<>();
 
-            if (!ordersJSON.equals("")){
-                orders = gson.fromJson(ordersJSON, new TypeToken<List<CourierOrder>>(){}.getType());
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+            Cursor cursor = db.query("trackdata", null, null, null, null, null, null);
+            if (cursor.moveToFirst()) {
+                do{ byte[] blob = cursor.getBlob(cursor.getColumnIndex("track"));
+
+                    String json = new String(blob);
+                    Gson gson = new Gson();
+                    Track track = gson.fromJson(json, new TypeToken<Track>() {
+                    }.getType());
+
+                    trackList.add(track);
+                }while (cursor.moveToNext());
+
             }
 
-            handler.postDelayed(this, 30000);
+            cursor.close();
+            db.close();
+
+            createCustomAdapter();
+
+            handler.postDelayed(refresh, 30000);
         }
     };
 
@@ -54,15 +73,34 @@ public class ClosedFragment extends Fragment{
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.fragment_closed, container, false);
 
-        sharedPreferences = getContext().getSharedPreferences("myPref", Context.MODE_PRIVATE);
+        dbHelper = new DBHelper(getContext());
 
-        String ordersJSON = sharedPreferences.getString("orders", "");
+        trackList = new ArrayList<>();
 
-        if (!ordersJSON.equals("")){
-            orders = gson.fromJson(ordersJSON, new TypeToken<List<CourierOrder>>(){}.getType());
+        listView = rootView.findViewById(R.id.lvClosed);
+
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        Cursor cursor = db.query("trackdata", null, null, null, null, null, null);
+        if (cursor.moveToFirst()) {
+            do{ byte[] blob = cursor.getBlob(cursor.getColumnIndex("track"));
+
+                String json = new String(blob);
+                Gson gson = new Gson();
+                Track track = gson.fromJson(json, new TypeToken<Track>() {
+                }.getType());
+
+                trackList.add(track);
+            }while (cursor.moveToNext());
+
         }
 
-        handler.post(refreshOrdersList);
+        cursor.close();
+        db.close();
+
+        createCustomAdapter();
+
+        handler.post(refresh);
 
         return rootView;
     }
@@ -70,6 +108,23 @@ public class ClosedFragment extends Fragment{
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        handler.removeCallbacks(refreshOrdersList);
     }
+
+    private void createCustomAdapter(){
+
+        data = new ArrayList<>();
+
+        for (Track track: trackList) {
+            Map<String, Object> m = new HashMap<>();
+
+            m.put(ATTRIBUTE_NAME_TRACK, track);
+
+            data.add(m);
+        }
+
+        closedOrdersAdapter = new ClosedOrdersAdapter(getContext(), R.layout.closed_custom_adapter, data, mFrom);
+
+        listView.setAdapter(closedOrdersAdapter);
+    }
+
 }

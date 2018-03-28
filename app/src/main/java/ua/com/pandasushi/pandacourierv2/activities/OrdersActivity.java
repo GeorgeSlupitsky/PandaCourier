@@ -46,35 +46,6 @@ public class OrdersActivity extends AppCompatActivity {
 
     private static ArrayList<CourierOrder> orders;
 
-    private Handler handler = new Handler();
-
-    private Gson gson = new Gson();
-
-    Runnable refreshOrdersList = new Runnable() {
-        @Override
-        public void run() {
-            try {
-                orders = null;
-
-                CourierCommand courierCommand = new CourierCommand();
-                courierCommand.setCourierId(courierId);
-                courierCommand.setCommand(Commands.GET_ORDER_LIST);
-
-                orders = (ArrayList) new SocketAsyncTask().execute(courierCommand).get();
-
-                if (orders != null){
-                    sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
-                }
-
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            handler.postDelayed(this, 10000);
-        }
-    };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -139,18 +110,6 @@ public class OrdersActivity extends AppCompatActivity {
         } else {
             super.onBackPressed();
         }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        handler.post(refreshOrdersList);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        handler.removeCallbacks(refreshOrdersList);
     }
 
     public static ArrayList <CourierOrder> refreshOrderList(){

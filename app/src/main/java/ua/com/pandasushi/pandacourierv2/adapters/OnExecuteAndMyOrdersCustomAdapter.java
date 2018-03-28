@@ -289,8 +289,12 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                     }
 
                                                     if (MyOrdersFragment.myOrdersNotDelivered.size() == 0){
+                                                        TrackWritingService.courierId = courierId;
+                                                        TrackWritingService.orders = new ArrayList<>();
                                                         context.startService(new Intent(context, TrackWritingService.class));
                                                     }
+
+                                                    TrackWritingService.orders.add(order);
 
                                                     MyOrdersFragment.myOrdersNotDelivered.add(order);
 
@@ -376,8 +380,18 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                         }
                                                     }
 
+                                                    Iterator itr2 = TrackWritingService.orders.iterator();
+                                                    while (itr2.hasNext())
+                                                    {
+                                                        CourierOrder orderToRemoveFromService = (CourierOrder) itr2.next();
+                                                        if (orderToRemoveFromService.getOrderID().equals(order.getOrderID())){
+                                                            itr2.remove();
+                                                        }
+                                                    }
+
                                                     if (MyOrdersFragment.myOrdersNotDelivered.size() == 0){
                                                         context.stopService(new Intent(context, TrackWritingService.class));
+                                                        TrackWritingService.orders = new ArrayList<>();
                                                     }
                                                 }
                                             } catch (Exception e) {

@@ -1,10 +1,9 @@
 package ua.com.pandasushi.database.common.gps.models;
 
-import android.graphics.Point;
-
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
+
+import ua.com.pandasushi.database.common.CourierOrder;
 
 /**
  * Created by oleg on 09.06.16.
@@ -21,6 +20,8 @@ public class Track implements Serializable {
     private int pointsOnTrack;
     private List<AVLData> avlDataList;
     private List<Points> points;
+    private List<CourierOrder> orders;
+    private Integer courierId;
 
     public int getPointsOnTrack() {
         return pointsOnTrack;
@@ -29,16 +30,6 @@ public class Track implements Serializable {
     public void setPointsOnTrack(int pointsOnTrack) {
         this.pointsOnTrack = pointsOnTrack;
     }
-
-    public ArrayList<Point> getAltitudeChart() {
-        return altitudeChart;
-    }
-
-    public void setAltitudeChart(ArrayList<Point> altitudeChart) {
-        this.altitudeChart = altitudeChart;
-    }
-
-    private ArrayList<Point> altitudeChart;
 
     public List<Points> getPoints() {
         return points;
@@ -120,5 +111,19 @@ public class Track implements Serializable {
         this.avlDataList = avlDataList;
     }
 
+    public List<CourierOrder> getOrders() {
+        return orders;
+    }
 
+    public void setOrders(List<CourierOrder> orders) {
+        this.orders = orders;
+    }
+
+    public Integer getCourierId() {
+        return courierId;
+    }
+
+    public void setCourierId(Integer courierId) {
+        this.courierId = courierId;
+    }
 }

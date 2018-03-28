@@ -20,6 +20,7 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 
+import ua.com.pandasushi.database.common.CourierOrder;
 import ua.com.pandasushi.pandacourierv2.DBHelper;
 
 import java.text.SimpleDateFormat;
@@ -57,6 +58,8 @@ public class TrackWritingService extends Service implements LocationListener {
     private String timeStart, timeStop;
     private Gson gson;
     public static String lenghtOfTrack;
+    public static Integer courierId;
+    public static List<CourierOrder> orders;
 
     Runnable tracking = new Runnable() {
         public void run() {
@@ -185,6 +188,8 @@ public class TrackWritingService extends Service implements LocationListener {
             track.setTimeStart(timeStart);
             track.setTimeStop(timeStop);
             track.setPoints(pointsList);
+            track.setOrders(orders);
+            track.setCourierId(courierId);
             ArrayList<Integer> speedList = new ArrayList<>();
             ArrayList<Integer> altitudeList = new ArrayList<>();
             int speed = 0, altitude = 0;

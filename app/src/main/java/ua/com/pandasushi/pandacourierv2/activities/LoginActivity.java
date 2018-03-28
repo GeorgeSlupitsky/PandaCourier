@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.Build;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -44,7 +45,45 @@ public class LoginActivity extends AppCompatActivity {
     private boolean isStartShift;
     private boolean isCorrectCloseShift;
 
+    private Handler handler = new Handler();
+
     private Gson gson = new Gson();
+
+    Runnable refresh = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                CourierCommand courierCommand = new CourierCommand();
+                courierCommand.setCourierId(courierId);
+                courierCommand.setCommand(Commands.GET_COURIER_LIST);
+                couriers = (ArrayList<Courier>) new SocketAsyncTask(LoginActivity.this).execute(courierCommand).get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            if (couriers != null && !couriers.isEmpty()){
+                String couriersJson = gson.toJson(couriers);
+                sharedPreferences.edit().putString("couriers", couriersJson).apply();
+
+                String[] items = new String[couriers.size()];
+
+                for (Courier courier: couriers){
+                    items[couriers.indexOf(courier)] = courier.getName();
+                }
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(LoginActivity.this, android.R.layout.simple_spinner_dropdown_item, items);
+
+                spinner.setAdapter(adapter);
+
+                spinner.setEnabled(true);
+                passwordET.setEnabled(true);
+            } else {
+                spinner.setEnabled(false);
+                passwordET.setEnabled(false);
+            }
+
+            handler.postDelayed(this, 1000);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -225,6 +264,10 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }
         });
+
+        if (courierId == -1){
+            handler.post(refresh);
+        }
     }
 
     @Override
@@ -248,5 +291,11 @@ public class LoginActivity extends AppCompatActivity {
             spinner.setVisibility(View.GONE);
             passwordET.setVisibility(View.GONE);
         }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        handler.removeCallbacks(refresh);
     }
 }
