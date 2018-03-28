@@ -9,6 +9,8 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Handler;
@@ -237,6 +239,27 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
 
         holder.district.setText(order.getRegionCharcode());
         holder.district.setBackgroundColor(order.getRegionBackground());
+
+        long diff = (order.getPromiseTime().getTime() - new Date().getTime())/60000;
+
+        holder.time.setText(diff+"");
+
+        if (order.getOnTime() != null){
+            if (!order.getOnTime()){
+                if (diff > 30){
+                    holder.time.setTextColor(Color.GREEN);
+                } else if (diff < 30 && diff > 20){
+                    holder.time.setTextColor(Color.YELLOW);
+                } else if (diff < 20 && diff > 5){
+                    holder.time.setTextColor(Color.parseColor("#ffa500"));
+                } else if (diff < 5){
+                    holder.time.setTextColor(Color.RED);
+                }
+            } else {
+                holder.time.setTextColor(Color.parseColor("#551a8b"));
+                holder.time.setTypeface(null, Typeface.BOLD);
+            }
+        }
 
         holder.promiseTime.setText(sdf.format(order.getPromiseTime()));
         holder.recommendedTime.setText(sdf.format(order.getPreferedTime()));
