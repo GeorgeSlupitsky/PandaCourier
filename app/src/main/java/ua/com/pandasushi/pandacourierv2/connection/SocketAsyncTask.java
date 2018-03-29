@@ -23,7 +23,8 @@ public class SocketAsyncTask extends AsyncTask<CourierCommand, Void, Object> {
 
 //    private final String HOST = "192.168.1.72"; //home
 //    private final String HOST = "192.168.1.152"; //Panda
-    private static final String HOST = "192.168.88.254"; //work
+//    private static final String HOST = "192.168.88.254"; //work
+    private static final String HOST = "192.168.88.94"; //work my laptop
     private static final int PORT = 29999;
     private Context context;
     private ProgressDialog pDialog;

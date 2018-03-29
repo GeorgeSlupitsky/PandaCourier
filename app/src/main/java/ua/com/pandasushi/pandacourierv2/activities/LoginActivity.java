@@ -287,6 +287,7 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        handler.post(refresh);
         if (courierId != -1){
             spinner.setVisibility(View.GONE);
             passwordET.setVisibility(View.GONE);
