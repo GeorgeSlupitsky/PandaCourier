@@ -74,6 +74,7 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
     private Handler handler = new Handler();
     private Integer courierId;
     private DBHelper dbHelper;
+    private boolean connection = true;
 
     private Runnable requestForSavingTrackAndMyDeliveredOrders = new Runnable() {
         @Override
@@ -82,17 +83,18 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                 CourierCommand courierCommand = new CourierCommand();
                 courierCommand.setCourierId(courierId);
                 courierCommand.setCommand(Commands.CHECK);
-                String response = (String) new SocketAsyncTask(getContext()).execute(courierCommand).get();
+                String response = (String) new SocketAsyncTask().execute(courierCommand).get();
                 if (response.equals("OK")){
                     context.stopService(new Intent(context, TrackWritingService.class));
+                    MyOrdersFragment.serviceStarted = false;
 
                     String response2 = null;
                     for (CourierOrder order: myOrders){
                         CourierCommand courierCommand2 = new CourierCommand();
                         courierCommand2.setCourierId(courierId);
-                        courierCommand2.setOrderId(order.getOrderID());
+                        courierCommand2.setOrder(order);
                         courierCommand2.setCommand(Commands.UPDATE_ORDER);
-                        response2 = (String) new SocketAsyncTask(getContext()).execute(courierCommand2).get();
+                        response2 = (String) new SocketAsyncTask().execute(courierCommand2).get();
                     }
                     if (response2 != null){
                         if (response2.equals("OK")){
@@ -100,6 +102,8 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                             courierCommand3.setCourierId(courierId);
                             courierCommand3.setCommand(Commands.GET_ORDER_LIST);
                             ArrayList<CourierOrder> orders = OrdersActivity.refreshOrderList();
+
+                            sharedPreferences.edit().putBoolean("connectionForMyOrders", true).apply();
 
                             if (orders != null){
                                 sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
@@ -123,7 +127,7 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                         CourierCommand courierCommand4 = new CourierCommand();
                         courierCommand4.setCourierId(courierId);
                         courierCommand4.setCommand(Commands.SAVE_TRACK);
-                        String response3 = (String) new SocketAsyncTask(getContext()).execute(courierCommand4).get();
+                        String response3 = (String) new SocketAsyncTask().execute(courierCommand4).get();
                         if (response3.equals("OK")){
                             handler.removeCallbacks(this);
                         }
@@ -180,6 +184,7 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
         holder.district = row.findViewById(R.id.district);
         holder.street = row.findViewById(R.id.street);
         holder.address = row.findViewById(R.id.address);
+        holder.orderNumber = row.findViewById(R.id.order_number);
 
         CourierOrder order = (CourierOrder) data.get(position).get(mFrom[0]);
 
@@ -248,11 +253,11 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
             if (!order.getOnTime()){
                 if (diff > 30){
                     holder.time.setTextColor(Color.GREEN);
-                } else if (diff < 30 && diff > 20){
+                } else if (diff <= 30 && diff > 20){
                     holder.time.setTextColor(Color.YELLOW);
-                } else if (diff < 20 && diff > 5){
+                } else if (diff <= 20 && diff > 5){
                     holder.time.setTextColor(Color.parseColor("#ffa500"));
-                } else if (diff < 5){
+                } else if (diff <= 5){
                     holder.time.setTextColor(Color.RED);
                 }
             } else {
@@ -269,12 +274,14 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
         Boolean onExecute = (Boolean) data.get(position).get(mFrom[1]);
 
         if (onExecute){
+            holder.orderNumber.setText(order.getCharcode());
             if (order.getCourierId() == null){
                 row.setBackgroundColor(getContext().getResources().getColor(R.color.white));
             } else {
                 row.setBackgroundColor(getContext().getResources().getColor(R.color.grey));
             }
         } else {
+            holder.orderNumber.setVisibility(View.GONE);
             if (order.getDeliverTime() == null){
                 row.setBackgroundColor(getContext().getResources().getColor(R.color.white));
             } else {
@@ -299,9 +306,11 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                             try {
                                                 CourierCommand courierCommand = new CourierCommand();
                                                 courierCommand.setCourierId(courierId);
-                                                courierCommand.setOrderId(order.getOrderID());
+                                                order.setCourierId(courierId);
+                                                order.setSendTime(new Date());
+                                                courierCommand.setOrder(order);
                                                 courierCommand.setCommand(Commands.UPDATE_ORDER);
-                                                String response = (String) new SocketAsyncTask(getContext()).execute(courierCommand).get();
+                                                String response = (String) new SocketAsyncTask().execute(courierCommand).get();
                                                 if (response.equals("OK")){
                                                     ArrayList<CourierOrder> orders = OrdersActivity.refreshOrderList();
 
@@ -314,7 +323,6 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                     if (MyOrdersFragment.myOrdersNotDelivered.size() == 0){
                                                         TrackWritingService.courierId = courierId;
                                                         TrackWritingService.orders = new ArrayList<>();
-                                                        context.startService(new Intent(context, TrackWritingService.class));
                                                     }
 
                                                     TrackWritingService.orders.add(order);
@@ -330,6 +338,7 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                 Toast toast = Toast.makeText(getContext().getApplicationContext(),
                                                         getContext().getString(R.string.connection_error_cannot_take), Toast.LENGTH_LONG);
                                                 toast.show();
+                                                connection = false;
                                             }
                                             break;
                                     }
@@ -337,43 +346,50 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                             });
                     builder.create().show();
                 } else {
-                    String courierJson = sharedPreferences.getString("couriers", "");
+                    if (connection){
+                        String courierJson = sharedPreferences.getString("couriers", "");
 
-                    if (!courierJson.equals("")){
-                        List <Courier> couriers = gson.fromJson(courierJson, new TypeToken<List<Courier>>(){}.getType());
+                        if (!courierJson.equals("")){
+                            List <Courier> couriers = gson.fromJson(courierJson, new TypeToken<List<Courier>>(){}.getType());
 
-                        String courierName = null;
+                            String courierName = null;
 
-                        for (Courier courier: couriers){
-                            if (order.getCourierId().equals(courier.getId())){
-                                courierName = courier.getName();
+                            for (Courier courier: couriers){
+                                if (order.getCourierId().equals(courier.getId())){
+                                    courierName = courier.getName();
+                                }
                             }
-                        }
 
-                        if (courierName != null){
-                            AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                            builder.setItems(new CharSequence[]
-                                            {courierName},
-                                    new DialogInterface.OnClickListener() {
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            switch (which) {
-                                                case 0:
+                            if (courierName != null){
+                                AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                                builder.setItems(new CharSequence[]
+                                                {courierName},
+                                        new DialogInterface.OnClickListener() {
+                                            public void onClick(DialogInterface dialog, int which) {
+                                                switch (which) {
+                                                    case 0:
+                                                }
                                             }
-                                        }
-                                    });
-                            builder.create().show();
+                                        });
+                                builder.create().show();
+                            }
+
+
                         }
-
-
                     }
                 }
             } else {
                 if (order.getDeliverTime() == null){
                     AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                    builder.setTitle(getContext().getString(R.string.client_name) + ": " + order.getName());
+                    String comment = order.getComment();
+                    if (comment == null) {
+                        comment = "";
+                    }
+                    builder.setTitle(getContext().getString(R.string.client_name) + ": " + order.getName() + "\n" +
+                                    getContext().getString(R.string.comment) + ": " + comment);
                     builder.setItems(new CharSequence[]
                                     {getContext().getString(R.string.cancel), getContext().getString(R.string.call),
-                                            getContext().getString(R.string.map), getContext().getString(R.string.delivered)},
+                                            getContext().getString(R.string.map), getContext().getString(R.string.delivered), getContext().getString(R.string.customer_refused)},
                             new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog, int which) {
                                     switch (which) {
@@ -381,9 +397,9 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                             try {
                                                 CourierCommand courierCommand = new CourierCommand();
                                                 courierCommand.setCourierId(null);
-                                                courierCommand.setOrderId(order.getOrderID());
+                                                courierCommand.setOrder(order);
                                                 courierCommand.setCommand(Commands.UPDATE_ORDER);
-                                                String response = (String) new SocketAsyncTask(getContext()).execute(courierCommand).get();
+                                                String response = (String) new SocketAsyncTask().execute(courierCommand).get();
                                                 if (response.equals("OK")){
                                                     CourierCommand courierCommand2 = new CourierCommand();
                                                     courierCommand2.setCourierId(courierId);
@@ -414,6 +430,7 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
 
                                                     if (MyOrdersFragment.myOrdersNotDelivered.size() == 0){
                                                         context.stopService(new Intent(context, TrackWritingService.class));
+                                                        MyOrdersFragment.serviceStarted = false;
                                                         TrackWritingService.orders = new ArrayList<>();
                                                     }
                                                 }
@@ -449,10 +466,73 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                     try {
                                                         CourierCommand courierCommand = new CourierCommand();
                                                         courierCommand.setCourierId(courierId);
-                                                        courierCommand.setOrderId(order.getOrderID());
-                                                        courierCommand.setDeliverTime(courierOrder.getDeliverTime());
+                                                        courierCommand.setOrder(courierOrder);
                                                         courierCommand.setCommand(Commands.UPDATE_ORDER);
-                                                        String response = (String) new SocketAsyncTask(getContext()).execute(courierCommand).get();
+                                                        String response = (String) new SocketAsyncTask().execute(courierCommand).get();
+                                                        if (response.equals("OK")){
+                                                            sharedPreferences.edit().putBoolean("connectionForMyOrders", true).apply();
+                                                            CourierCommand courierCommand2 = new CourierCommand();
+                                                            courierCommand2.setCourierId(courierId);
+                                                            courierCommand2.setCommand(Commands.GET_ORDER_LIST);
+                                                            ArrayList<CourierOrder> orders = OrdersActivity.refreshOrderList();
+
+                                                            if (orders != null){
+                                                                sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
+                                                            }
+
+                                                            Iterator itr = MyOrdersFragment.myOrdersNotDelivered.iterator();
+                                                            while (itr.hasNext())
+                                                            {
+                                                                CourierOrder courierOrderToRemove = (CourierOrder) itr.next();
+                                                                if (courierOrderToRemove.getOrderID().equals(order.getOrderID())){
+                                                                    itr.remove();
+                                                                }
+                                                            }
+
+                                                            String myOrdersND = gson.toJson(MyOrdersFragment.myOrdersNotDelivered);
+
+                                                            sharedPreferences.edit().putString("myOrdersNotDelivered", myOrdersND).apply();
+
+                                                        }
+
+
+                                                    } catch (Exception e){
+                                                        sharedPreferences.edit().putBoolean("connectionForMyOrders", false).apply();
+                                                        sharedPreferences.edit().putString("myOrders", gson.toJson(myOrders)).apply();
+
+                                                        Iterator itr = MyOrdersFragment.myOrdersNotDelivered.iterator();
+                                                        while (itr.hasNext())
+                                                        {
+                                                            CourierOrder courierOrderToRemove = (CourierOrder) itr.next();
+                                                            if (courierOrderToRemove.getOrderID().equals(order.getOrderID())){
+                                                                itr.remove();
+
+                                                                String myOrdersND = gson.toJson(MyOrdersFragment.myOrdersNotDelivered);
+
+                                                                sharedPreferences.edit().putString("myOrdersNotDelivered", myOrdersND).apply();
+                                                            }
+                                                        }
+
+                                                        if (MyOrdersFragment.myOrdersNotDelivered.size() == 0){
+                                                            handler.post(requestForSavingTrackAndMyDeliveredOrders);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            break;
+
+                                        case 4:
+                                            for (CourierOrder courierOrder: myOrders){
+                                                if (courierOrder.getOrderID().equals(order.getOrderID())){
+                                                    courierOrder.setDeliverTime(new Date());
+                                                    courierOrder.setPoint(new Points(String.valueOf(TrackWritingService.currentLat), String.valueOf(TrackWritingService.currentLon)));
+
+                                                    try {
+                                                        CourierCommand courierCommand = new CourierCommand();
+                                                        courierCommand.setCourierId(courierId);
+                                                        courierCommand.setOrder(courierOrder);
+                                                        courierCommand.setCommand(Commands.UPDATE_ORDER);
+                                                        String response = (String) new SocketAsyncTask().execute(courierCommand).get();
                                                         if (response.equals("OK")){
                                                             sharedPreferences.edit().putBoolean("connectionForMyOrders", true).apply();
                                                             CourierCommand courierCommand2 = new CourierCommand();
@@ -516,6 +596,7 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
     }
 
     static class OnExecuteAndMyOrdersHolder{
+        TextView orderNumber;
         TextView recommendedTime;
         TextView time;
         TextView promiseTime;

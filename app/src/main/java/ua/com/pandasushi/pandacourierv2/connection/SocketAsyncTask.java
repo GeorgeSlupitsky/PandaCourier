@@ -1,8 +1,10 @@
 package ua.com.pandasushi.pandacourierv2.connection;
 
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
+import android.support.v7.app.AlertDialog;
 
 import com.pandasushi.pandacourierv2.R;
 
@@ -40,11 +42,7 @@ public class SocketAsyncTask extends AsyncTask<CourierCommand, Void, Object> {
     protected void onPreExecute() {
         super.onPreExecute();
         if (context != null){
-            pDialog = new ProgressDialog(context);
-            pDialog.setMessage(context.getString(R.string.connection));
-            pDialog.setIndeterminate(false);
-            pDialog.setCancelable(false);
-            pDialog.show();
+            setDialog(true);
         }
     }
 
@@ -77,7 +75,18 @@ public class SocketAsyncTask extends AsyncTask<CourierCommand, Void, Object> {
     protected void onPostExecute(Object o) {
         super.onPostExecute(o);
         if (context != null){
-            pDialog.dismiss();
+            setDialog(false);
+        }
+    }
+
+    private void setDialog(boolean show){
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setView(R.layout.progress);
+        Dialog dialog = builder.create();
+        if (show) {
+            dialog.show();
+        } else {
+            dialog.dismiss();
         }
     }
 }

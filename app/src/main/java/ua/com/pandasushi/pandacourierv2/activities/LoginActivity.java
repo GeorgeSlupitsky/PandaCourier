@@ -15,6 +15,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
@@ -38,6 +39,7 @@ public class LoginActivity extends AppCompatActivity {
     private Spinner spinner;
     private String responseCheck;
     private String checkPassword;
+    private TextView courierName;
     private ArrayList<Courier> couriers = new ArrayList<>();
 
     private SharedPreferences sharedPreferences;
@@ -56,7 +58,7 @@ public class LoginActivity extends AppCompatActivity {
                 CourierCommand courierCommand = new CourierCommand();
                 courierCommand.setCourierId(courierId);
                 courierCommand.setCommand(Commands.GET_COURIER_LIST);
-                couriers = (ArrayList<Courier>) new SocketAsyncTask(LoginActivity.this).execute(courierCommand).get();
+                couriers = (ArrayList<Courier>) new SocketAsyncTask().execute(courierCommand).get();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -76,12 +78,17 @@ public class LoginActivity extends AppCompatActivity {
 
                 spinner.setEnabled(true);
                 passwordET.setEnabled(true);
+
+                handler.removeCallbacks(this);
             } else {
+                Toast toast = Toast.makeText(getApplicationContext(),
+                        getString(R.string.wifi_off), Toast.LENGTH_LONG);
+                toast.show();
                 spinner.setEnabled(false);
                 passwordET.setEnabled(false);
-            }
+                handler.postDelayed(this, 10000);
 
-            handler.postDelayed(this, 1000);
+            }
         }
     };
 
@@ -99,6 +106,7 @@ public class LoginActivity extends AppCompatActivity {
 
         fa = this;
 
+        courierName = (TextView) findViewById(R.id.courierName);
         startShift = (Button) findViewById(R.id.start_shift);
         passwordET = (EditText) findViewById(R.id.password);
         spinner = (Spinner) findViewById(R.id.spinnerCourier);
@@ -117,32 +125,8 @@ public class LoginActivity extends AppCompatActivity {
         courierId = sharedPreferences.getInt("courierId", -1);
 
         if (courierId == -1){
-            try {
-                CourierCommand courierCommand = new CourierCommand();
-                courierCommand.setCourierId(courierId);
-                courierCommand.setCommand(Commands.GET_COURIER_LIST);
-                couriers = (ArrayList<Courier>) new SocketAsyncTask(this).execute(courierCommand).get();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            if (couriers != null && !couriers.isEmpty()){
-                String couriersJson = gson.toJson(couriers);
-                sharedPreferences.edit().putString("couriers", couriersJson).apply();
-
-                String[] items = new String[couriers.size()];
-
-                for (Courier courier: couriers){
-                    items[couriers.indexOf(courier)] = courier.getName();
-                }
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, items);
-
-                spinner.setAdapter(adapter);
-            } else {
-                spinner.setEnabled(false);
-                passwordET.setEnabled(false);
-            }
-
+            courierName.setVisibility(View.GONE);
+            handler.post(refresh);
 
         } else {
             spinner.setVisibility(View.GONE);
@@ -152,7 +136,7 @@ public class LoginActivity extends AppCompatActivity {
                 CourierCommand courierCommand = new CourierCommand();
                 courierCommand.setCourierId(courierId);
                 courierCommand.setCommand(Commands.GET_COURIER_LIST);
-                couriers = (ArrayList<Courier>) new SocketAsyncTask(this).execute(courierCommand).get();
+                couriers = (ArrayList<Courier>) new SocketAsyncTask().execute(courierCommand).get();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -160,6 +144,12 @@ public class LoginActivity extends AppCompatActivity {
             if (couriers != null && !couriers.isEmpty()){
                 String couriersJson = gson.toJson(couriers);
                 sharedPreferences.edit().putString("couriers", couriersJson).apply();
+
+                for (Courier courier: couriers){
+                    if (courier.getId().equals(courierId)){
+                        courierName.setText(courier.getName());
+                    }
+                }
             }
         }
 
@@ -235,7 +225,7 @@ public class LoginActivity extends AppCompatActivity {
                                 CourierCommand courierCommand = new CourierCommand();
                                 courierCommand.setCourierId(courierId);
                                 courierCommand.setCommand(Commands.END_CHANGE);
-                                responseShift = (String) new SocketAsyncTask(LoginActivity.this).execute(courierCommand).get();
+                                responseShift = (String) new SocketAsyncTask().execute(courierCommand).get();
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -264,10 +254,6 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }
         });
-
-        if (courierId == -1){
-            handler.post(refresh);
-        }
     }
 
     @Override

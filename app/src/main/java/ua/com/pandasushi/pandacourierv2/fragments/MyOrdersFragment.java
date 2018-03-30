@@ -1,6 +1,7 @@
 package ua.com.pandasushi.pandacourierv2.fragments;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
@@ -9,7 +10,10 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -17,12 +21,18 @@ import com.pandasushi.pandacourierv2.R;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import ua.com.pandasushi.database.common.Commands;
+import ua.com.pandasushi.database.common.CourierCommand;
 import ua.com.pandasushi.database.common.CourierOrder;
+import ua.com.pandasushi.pandacourierv2.activities.OrdersActivity;
 import ua.com.pandasushi.pandacourierv2.adapters.OnExecuteAndMyOrdersCustomAdapter;
+import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
+import ua.com.pandasushi.pandacourierv2.services.TrackWritingService;
 
 /**
  * Created by User9 on 21.03.2018.
@@ -40,6 +50,8 @@ public class MyOrdersFragment extends Fragment {
     private List<CourierOrder> orders;
     private List<CourierOrder> myOrders;
     private ListView listView;
+    private Button startMoving;
+    private TextView mileage;
     private ArrayList<Map<String, Object>> data;
 
     private Integer courierId;
@@ -58,7 +70,9 @@ public class MyOrdersFragment extends Fragment {
 
     private String maps;
 
-    boolean isConnected = true;
+    private boolean isConnected = true;
+
+    public static boolean serviceStarted = false;
 
 
     Runnable refreshOrdersList = new Runnable() {
@@ -101,11 +115,58 @@ public class MyOrdersFragment extends Fragment {
         }
     };
 
+    Runnable checkingForStartService = new Runnable() {
+        @Override
+        public void run() {
+            if (MyOrdersFragment.myOrdersNotDelivered.size() != 0){
+                try {
+                    CourierCommand courierCommand = new CourierCommand();
+                    courierCommand.setCourierId(courierId);
+                    courierCommand.setCommand(Commands.CHECK);
+                    String response = (String) new SocketAsyncTask().execute(courierCommand).get();
+                    if (response == null){
+                        if (!serviceStarted){
+                            getContext().startService(new Intent(getContext(), TrackWritingService.class));
+                            serviceStarted = true;
+                            handler.post(setTrackLength);
+                        }
+                    }
+                } catch (Exception e){
+                    e.printStackTrace();
+                    if (!serviceStarted){
+                        getContext().startService(new Intent(getContext(), TrackWritingService.class));
+                        serviceStarted = true;
+                        handler.post(setTrackLength);
+                    }
+                }
+            }
+            handler.postDelayed(this, 10000);
+        }
+    };
+
+    Runnable setTrackLength = new Runnable() {
+        @Override
+        public void run() {
+            if (serviceStarted){
+                if (TrackWritingService.lenghtOfTrack != null){
+                    mileage.setText(TrackWritingService.lenghtOfTrack + " " + getContext().getString(R.string.km));
+                    handler.postDelayed(this, 2000);
+                }
+            } else {
+                handler.removeCallbacks(this);
+            }
+        }
+    };
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.fragment_my_orders, container, false);
 
         listView = rootView.findViewById(R.id.lvMyOrders);
+
+        startMoving = rootView.findViewById(R.id.start_moving);
+
+        mileage = rootView.findViewById(R.id.mileage);
 
         sharedPreferences = getContext().getSharedPreferences("myPref", Context.MODE_PRIVATE);
 
@@ -129,6 +190,22 @@ public class MyOrdersFragment extends Fragment {
         handler.post(refreshOrdersListIfIsDelivered);
         handler.postDelayed(refreshOrdersListIfSPMapsChanged,2000);
         handler.postDelayed(refreshOrdersListIfSPOrdersChanged,3000);
+        handler.post(checkingForStartService);
+
+        startMoving.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (myOrdersNotDelivered.size() != 0){
+                    getContext().startService(new Intent(getContext(), TrackWritingService.class));
+                    serviceStarted = true;
+                    handler.post(setTrackLength);
+                } else {
+                    Toast toast = Toast.makeText(getContext().getApplicationContext(),
+                            getContext().getString(R.string.cannot_start_trip), Toast.LENGTH_LONG);
+                    toast.show();
+                }
+            }
+        });
 
         return rootView;
     }

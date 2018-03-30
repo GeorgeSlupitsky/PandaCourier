@@ -23,13 +23,22 @@
         android:layout_below="@+id/spinnerCourier"
         android:hint="@string/password" />
 
+    <TextView
+        android:id="@+id/courierName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/start_shift"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="17dp"
+        android:text="Courier Name"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
     <Button
         android:id="@+id/start_shift"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="206dp"
+        android:layout_centerVertical="true"
         android:text="@string/start_shift" />
 
 </RelativeLayout>

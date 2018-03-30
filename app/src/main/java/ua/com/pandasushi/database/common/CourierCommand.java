@@ -5,8 +5,7 @@ package ua.com.pandasushi.database.common;
 
 public class CourierCommand implements Serializable {
     private Integer courierId;
-    private Long orderId;
-    private Date deliverTime;
+    private CourierOrder order;
     private Commands command;
 
     public Integer getCourierId() {
@@ -25,19 +24,11 @@ public class CourierCommand implements Serializable {
         this.command = command;
     }
 
-    public Long getOrderId() {
-        return orderId;
+    public CourierOrder getOrder() {
+        return order;
     }
 
-    public void setOrderId(Long orderId) {
-        this.orderId = orderId;
-    }
-
-    public Date getDeliverTime() {
-        return deliverTime;
-    }
-
-    public void setDeliverTime(Date deliverTime) {
-        this.deliverTime = deliverTime;
+    public void setOrder(CourierOrder order) {
+        this.order = order;
     }
 }

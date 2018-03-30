@@ -134,6 +134,7 @@ public class TrackWritingService extends Service implements LocationListener {
                 Log.i("run Exeption", x.getMessage());
             }
             fullLenght = lenght;
+            lenghtOfTrack = String.valueOf(fullLenght);
             handler.postDelayed(this, 1000);
         }
     };

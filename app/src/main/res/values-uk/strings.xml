@@ -17,7 +17,9 @@
     <string name="call">Подзвонити</string>
     <string name="map">Карта</string>
     <string name="delivered">Доставлено</string>
+    <string name="customer_refused">Клієнт відмовився</string>
     <string name="client_name">Ім`я клієнта</string>
+    <string name="comment">Коментар</string>
 
     <string name="loading_maps_me">Maps Me завантажується. Будь ласка, почекайте.</string>
     <string name="connection">Будь ласка, почекайте йде з`єднання.</string>
@@ -31,4 +33,12 @@
 
     <string name="no_saved_tracks">Не має збережених треків</string>
     <string name="dont_delievered_orders">У Вас є не доставлені замовлення. Будь ласка, доставте їх і після цього спробуйте закрити зміну ще раз</string>
+
+    <string name="wifi_off">У Вас вимкнений wifi або Ви поза зоною його дії</string>
+    <string name="odometer_info">Для початку чи закриття зміни, будь ласка, введіть дані Вашого одометра</string>
+    <string name="additional_trip">Кілометраж додаткових поїздок (якщо були)</string>
+
+    <string name="start_moving">Почати рух</string>
+    <string name="km">км</string>
+    <string name="cannot_start_trip">Ви не можете почати рух, поки у Вас не має замовлень</string>
 </resources>

@@ -16,7 +16,9 @@
     <string name="call">Call</string>
     <string name="map">Map</string>
     <string name="delivered">Delivered</string>
+    <string name="customer_refused">Customer refused</string>
     <string name="client_name">Client name</string>
+    <string name="comment">Comment</string>
 
     <string name="loading_maps_me">Maps Me is loading. Please wait.</string>
     <string name="connection">Please wait connection is running.</string>
@@ -30,4 +32,11 @@
     <string name="no_saved_tracks">There are no saved tracks</string>
     <string name="dont_delievered_orders">You have don`t delivered orders. Please deliver them and after that try to close shift again</string>
 
+    <string name="wifi_off">Your wifi is off or you are not in area</string>
+    <string name="odometer_info">To start or to end the shift, please, enter data of your odometer</string>
+    <string name="additional_trip">Mileage of additional trips (if was)</string>
+
+    <string name="start_moving">Start moving</string>
+    <string name="km">km</string>
+    <string name="cannot_start_trip">You can`t start moving, while you don`t have orders</string>
 </resources>
