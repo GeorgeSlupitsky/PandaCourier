@@ -1,5 +1,6 @@
 package ua.com.pandasushi.pandacourierv2.fragments;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -90,19 +91,23 @@ public class MyOrdersFragment extends Fragment {
                     String response = (String) new SocketAsyncTask(HOST).execute(courierCommand).get();
                     if (response == null){
                         if (!serviceStarted){
-                            getContext().startService(new Intent(getContext(), TrackWritingService.class));
-                            serviceStarted = true;
-                            startMoving.setTextColor(Color.GREEN);
-                            handler.post(setTrackLength);
+                            if (!isMyServiceRunning(TrackWritingService.class)){
+                                getContext().startService(new Intent(getContext(), TrackWritingService.class));
+                                serviceStarted = true;
+                                startMoving.setTextColor(Color.GREEN);
+                                handler.post(setTrackLength);
+                            }
                         }
                     }
                 } catch (Exception e){
                     e.printStackTrace();
                     if (!serviceStarted){
-                        getContext().startService(new Intent(getContext(), TrackWritingService.class));
-                        serviceStarted = true;
-                        startMoving.setTextColor(Color.GREEN);
-                        handler.post(setTrackLength);
+                        if (!isMyServiceRunning(TrackWritingService.class)){
+                            getContext().startService(new Intent(getContext(), TrackWritingService.class));
+                            serviceStarted = true;
+                            startMoving.setTextColor(Color.GREEN);
+                            handler.post(setTrackLength);
+                        }
                     }
                 }
             }
@@ -138,7 +143,9 @@ public class MyOrdersFragment extends Fragment {
             if (serviceStarted){
                 if (TrackWritingService.lenghtOfTrack != null){
                     String [] length = TrackWritingService.lenghtOfTrack.split("\\.");
-                    mileage.setText(length[0] + " " + getContext().getString(R.string.m));
+                    if (getContext() != null){
+                        mileage.setText(length[0] + " " + getContext().getString(R.string.m));
+                    }
                 }
                 handler.postDelayed(this, 2000);
             } else {
@@ -203,13 +210,15 @@ public class MyOrdersFragment extends Fragment {
             public void onClick(View view) {
                 if (myOrdersNotDelivered.size() != 0){
                     if (!serviceStarted){
-                        getContext().startService(new Intent(getContext(), TrackWritingService.class));
-                        serviceStarted = true;
-                        startMoving.setTextColor(Color.GREEN);
-                        Toast toast = Toast.makeText(getContext().getApplicationContext(),
-                                getContext().getString(R.string.record_track), Toast.LENGTH_LONG);
-                        toast.show();
-                        handler.post(setTrackLength);
+                        if (!isMyServiceRunning(TrackWritingService.class)){
+                            getContext().startService(new Intent(getContext(), TrackWritingService.class));
+                            serviceStarted = true;
+                            startMoving.setTextColor(Color.GREEN);
+                            Toast toast = Toast.makeText(getContext().getApplicationContext(),
+                                    getContext().getString(R.string.record_track), Toast.LENGTH_LONG);
+                            toast.show();
+                            handler.post(setTrackLength);
+                        }
                     } else {
                         Toast toast = Toast.makeText(getContext().getApplicationContext(),
                                 getContext().getString(R.string.record_track_started), Toast.LENGTH_LONG);
@@ -290,5 +299,15 @@ public class MyOrdersFragment extends Fragment {
         onExecuteAndMyOrdersCustomAdapter = new OnExecuteAndMyOrdersCustomAdapter(getContext(), R.layout.on_execute_and_my_orders_custom_adapter, data, mFrom, myOrders);
 
         listView.setAdapter(onExecuteAndMyOrdersCustomAdapter);
+    }
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getContext().getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

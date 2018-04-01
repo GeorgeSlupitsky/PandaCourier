@@ -2,6 +2,7 @@ package ua.com.pandasushi.pandacourierv2.activities;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -146,6 +147,16 @@ public class OrdersActivity extends AppCompatActivity {
         }
     }
 
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -153,6 +164,12 @@ public class OrdersActivity extends AppCompatActivity {
             sharedPreferences.edit().putString("myOrdersNotDelivered", gson.toJson(MyOrdersFragment.myOrdersNotDelivered)).apply();
         } else {
             sharedPreferences.edit().putString("myOrdersNotDelivered", "").apply();
+        }
+
+        if (isMyServiceRunning(TrackWritingService.class)){
+            Intent intent = new Intent(this, TrackWritingService.class);
+            sharedPreferences.edit().putBoolean("appDestroy", true).apply();
+            stopService(intent);
         }
 
     }

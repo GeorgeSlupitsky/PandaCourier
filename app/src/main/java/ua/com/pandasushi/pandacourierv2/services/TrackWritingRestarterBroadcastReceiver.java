@@ -11,7 +11,7 @@ import android.content.Intent;
 public class TrackWritingRestarterBroadcastReceiver extends BroadcastReceiver {
 
     public void onReceive(Context context, Intent intent) {
-        context.startService(new Intent(context, TrackWritingService.class));;
+        context.startService(new Intent(context, TrackWritingService.class));
     }
 
 }

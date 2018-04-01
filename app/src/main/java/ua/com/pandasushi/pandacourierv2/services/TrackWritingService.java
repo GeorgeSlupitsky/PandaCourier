@@ -65,6 +65,8 @@ public class TrackWritingService extends Service implements LocationListener {
     public static List<CourierOrder> orders;
     public static Track track;
 
+    private boolean appDestroy = false;
+
     Runnable tracking = new Runnable() {
         public void run() {
 
@@ -188,6 +190,8 @@ public class TrackWritingService extends Service implements LocationListener {
 
         sharedPreferences = getSharedPreferences("myPref", MODE_PRIVATE);
 
+        sharedPreferences.edit().putBoolean("appDestroy", false).apply();
+
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
         if (mLocationManager != null) {
@@ -217,32 +221,72 @@ public class TrackWritingService extends Service implements LocationListener {
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (pointsList.size() >= 2) {
-            timeStop = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-            ContentValues cv = new ContentValues();
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-            String name = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date());
-            cv.put("name", name);
-            Track track = new Track();
-            track.setTimeStart(timeStart);
-            track.setTimeStop(timeStop);
-            track.setPoints(pointsList);
-            track.setOrders(orders);
-            track.setCourierId(courierId);
-            track.setPointsOnTrack(pointsOnTrack);
-            track.setTrackLenght(String.valueOf(fullLenght));
-
-            lenghtOfTrack = String.valueOf(fullLenght);
-
-            sharedPreferences.edit().putString("lastTrack", gson.toJson(track)).apply();
-
-            cv.put("track", gson.toJson(track).getBytes());
-            db.insert("trackdata", null, cv);
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        super.onStartCommand(intent, flags, startId);
+        String trackJSON = sharedPreferences.getString("trackAfterAppDestroy", "");
+        if (!trackJSON.equals("")){
+            track = gson.fromJson(trackJSON, Track.class);
+            handler.post(tracking);
         }
 
-        handler.removeCallbacks(tracking);
+
+        return START_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        appDestroy = sharedPreferences.getBoolean("appDestroy", false);
+
+        if (appDestroy){
+            Intent broadcastIntent = new Intent("RestartTrackWritingService");
+            sendBroadcast(broadcastIntent);
+            handler.removeCallbacks(tracking);
+
+            sharedPreferences.edit().putString("trackAfterAppDestroy", gson.toJson(track)).apply();
+        } else {
+            if (pointsList.size() >= 2) {
+                timeStop = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+                ContentValues cv = new ContentValues();
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                String name = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date());
+                cv.put("name", name);
+                Track track = new Track();
+                track.setTimeStart(timeStart);
+                track.setTimeStop(timeStop);
+                List<Points> pointsListWithoutDuplicate = new ArrayList<>();
+                Iterator<Points> itr = pointsList.iterator();
+                boolean firstPoint = true;
+                while (itr.hasNext()){
+                    Points points = itr.next();
+                    if (firstPoint){
+                        pointsListWithoutDuplicate.add(points);
+                        firstPoint = false;
+                    }
+                    if (itr.hasNext()){
+                        Points points2 = itr.next();
+                        if (!points.getLat().equals(points2.getLat()) || !points.getLon().equals(points2.getLon())){
+                            pointsListWithoutDuplicate.add(points2);
+                        }
+                    }
+                }
+                track.setPoints(pointsListWithoutDuplicate);
+                track.setOrders(orders);
+                track.setCourierId(courierId);
+                track.setPointsOnTrack(pointsOnTrack);
+                track.setTrackLenght(String.valueOf(fullLenght));
+
+                lenghtOfTrack = String.valueOf(fullLenght);
+
+                sharedPreferences.edit().putString("lastTrack", gson.toJson(track)).apply();
+
+                cv.put("track", gson.toJson(track).getBytes());
+                db.insert("trackdata", null, cv);
+            }
+
+            handler.removeCallbacks(tracking);
+        }
     }
 
     @Override

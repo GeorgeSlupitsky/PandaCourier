@@ -26,7 +26,18 @@
         <activity android:name="ua.com.pandasushi.pandacourierv2.activities.ChooseMapActivity" />
         <activity android:name="ua.com.pandasushi.pandacourierv2.activities.OdometerInfoActivity"/>
 
-        <service android:name="ua.com.pandasushi.pandacourierv2.services.TrackWritingService" />
+        <service android:name="ua.com.pandasushi.pandacourierv2.services.TrackWritingService"
+            android:enabled="true"/>
+
+        <receiver
+            android:name="ua.com.pandasushi.pandacourierv2.services.TrackWritingRestarterBroadcastReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:label="RestartServiceWhenStopped">
+            <intent-filter>
+                <action android:name="RestartTrackWritingService"/>
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

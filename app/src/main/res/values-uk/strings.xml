@@ -44,7 +44,7 @@
 
     <string name="didnt_go">Ви ще не поїхали</string>
     <string name="record_track">Запис треку розпочалась</string>
-    <string name="record_track_started">Запис треку вже розпочалась</string>
+    <string name="record_track_started">Запис треку вже розпочався</string>
 
     <string name="server_host">IP сервера:</string>
 </resources>
