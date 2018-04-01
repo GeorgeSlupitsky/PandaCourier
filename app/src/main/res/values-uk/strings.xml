@@ -39,6 +39,12 @@
     <string name="additional_trip">Кілометраж додаткових поїздок (якщо були)</string>
 
     <string name="start_moving">Почати рух</string>
-    <string name="km">км</string>
+    <string name="m">м</string>
     <string name="cannot_start_trip">Ви не можете почати рух, поки у Вас не має замовлень</string>
+
+    <string name="didnt_go">Ви ще не поїхали</string>
+    <string name="record_track">Запис треку розпочалась</string>
+    <string name="record_track_started">Запис треку вже розпочалась</string>
+
+    <string name="server_host">IP сервера:</string>
 </resources>

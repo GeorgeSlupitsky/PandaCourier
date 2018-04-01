@@ -51,7 +51,7 @@ public class OrdersFragment extends Fragment {
         Adapter adapter = new Adapter(getChildFragmentManager());
         adapter.addFragment(onExecuteFragment, getString(R.string.on_execute));
         adapter.addFragment(myOrdersFragment, getString(R.string.my_orders));
-        adapter.addFragment(closedFragment, getString(R.string.closed));
+        adapter.addFragment(closedFragment, getString(R.string.delivered));
         viewPager.setAdapter(adapter);
 
     }

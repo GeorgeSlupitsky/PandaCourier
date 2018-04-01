@@ -108,6 +108,7 @@ public class ClosedFragment extends Fragment{
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        handler.removeCallbacks(refresh);
     }
 
     private void createCustomAdapter(){

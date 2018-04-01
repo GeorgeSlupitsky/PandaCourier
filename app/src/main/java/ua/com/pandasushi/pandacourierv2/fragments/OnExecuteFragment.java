@@ -25,6 +25,7 @@ import java.util.Map;
 import ua.com.pandasushi.database.common.Commands;
 import ua.com.pandasushi.database.common.CourierCommand;
 import ua.com.pandasushi.database.common.CourierOrder;
+import ua.com.pandasushi.pandacourierv2.activities.LoginActivity;
 import ua.com.pandasushi.pandacourierv2.adapters.OnExecuteAndMyOrdersCustomAdapter;
 import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
 
@@ -97,7 +98,7 @@ public class OnExecuteFragment extends Fragment implements SwipeRefreshLayout.On
             courierCommand.setCourierId(courierId);
             courierCommand.setCommand(Commands.GET_ORDER_LIST);
 
-            orders = (ArrayList) new SocketAsyncTask().execute(courierCommand).get();
+            orders = (ArrayList) new SocketAsyncTask(MyOrdersFragment.HOST).execute(courierCommand).get();
 
             if (orders != null){
                 sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
@@ -170,7 +171,7 @@ public class OnExecuteFragment extends Fragment implements SwipeRefreshLayout.On
             courierCommand.setCourierId(courierId);
             courierCommand.setCommand(Commands.GET_ORDER_LIST);
 
-            orders = (ArrayList) new SocketAsyncTask().execute(courierCommand).get();
+            orders = (ArrayList) new SocketAsyncTask(MyOrdersFragment.HOST).execute(courierCommand).get();
 
             if (orders != null){
                 sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();

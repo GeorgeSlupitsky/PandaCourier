@@ -9,19 +9,40 @@ import ua.com.pandasushi.database.common.CourierOrder;
  * Created by oleg on 09.06.16.
  */
 public class Track implements Serializable {
-    private String name;
+
+    private Long trackId;
+
     private String maxSpeed;
+
     private String averageSpeed;
+
     private String averageAltitude;
+
     private String maxAltitude;
+
     private String trackLenght;
+
     private String timeStart;
+
     private String timeStop;
+
     private int pointsOnTrack;
-    private List<AVLData> avlDataList;
-    private List<Points> points;
-    private List<CourierOrder> orders;
+
     private Integer courierId;
+
+    private List<Points> points;
+
+    private List<AVLData> avlDataList;
+
+    private List<CourierOrder> orders;
+
+    public Long getTrackId() {
+        return trackId;
+    }
+
+    public void setTrackId(Long trackId) {
+        this.trackId = trackId;
+    }
 
     public int getPointsOnTrack() {
         return pointsOnTrack;
@@ -95,14 +116,6 @@ public class Track implements Serializable {
         this.timeStop = timeStop;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public List<AVLData> getAvlDataList() {
         return avlDataList;
     }
@@ -126,4 +139,5 @@ public class Track implements Serializable {
     public void setCourierId(Integer courierId) {
         this.courierId = courierId;
     }
+
 }

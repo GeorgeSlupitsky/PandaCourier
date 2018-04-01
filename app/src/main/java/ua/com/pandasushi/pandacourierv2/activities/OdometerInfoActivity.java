@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Base64;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -15,6 +16,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.pandasushi.pandacourierv2.R;
+
+import java.io.ByteArrayOutputStream;
 
 import ua.com.pandasushi.database.common.Commands;
 import ua.com.pandasushi.database.common.CourierCommand;
@@ -43,6 +46,8 @@ public class OdometerInfoActivity extends AppCompatActivity {
     private String responseShift;
 
     private boolean startShift;
+
+    private Bitmap imageBitmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,22 +81,26 @@ public class OdometerInfoActivity extends AppCompatActivity {
         Bundle bundle = intent.getExtras();
 
         if (bundle != null){
-            Bitmap imageBitmap = (Bitmap) bundle.get("data");
+            imageBitmap = (Bitmap) bundle.get("data");
         }
+
+        byte [] b = getByteArray(imageBitmap);
 
         ok.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Double odometrDataVal;
+                Double odometerDataVal;
                 if (odometerData.getText() != null && !odometerData.getText().toString().equals("")){
-                    odometrDataVal = Double.parseDouble(odometerData.getText().toString());
+                    odometerDataVal = Double.parseDouble(odometerData.getText().toString());
 
                     if (startShift){
                         try {
                             CourierCommand courierCommand = new CourierCommand();
                             courierCommand.setCourierId(courierId);
+                            courierCommand.setOdometer(odometerDataVal);
+                            courierCommand.setPhoto(b);
                             courierCommand.setCommand(Commands.START_CHANGE);
-                            responseShift = (String) new SocketAsyncTask(OdometerInfoActivity.this).execute(courierCommand).get();
+                            responseShift = (String) new SocketAsyncTask(LoginActivity.HOST, OdometerInfoActivity.this).execute(courierCommand).get();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -109,14 +118,18 @@ public class OdometerInfoActivity extends AppCompatActivity {
                         Double addTripVal;
                         if (!additionalTripData.getText().toString().equals("")){
                             addTripVal = Double.parseDouble(additionalTripData.getText().toString());
-                            odometrDataVal = odometrDataVal - addTripVal;
+                            odometerDataVal = odometerDataVal - addTripVal;
                         }
 
                         try {
+                            sharedPreferences.edit().putString("myOrdersNotDelivered", "").apply();
+                            sharedPreferences.edit().putString("orders", "").apply();
                             CourierCommand courierCommand = new CourierCommand();
                             courierCommand.setCourierId(courierId);
+                            courierCommand.setOdometer(odometerDataVal);
+                            courierCommand.setPhoto(b);
                             courierCommand.setCommand(Commands.END_CHANGE);
-                            responseShift = (String) new SocketAsyncTask(OdometerInfoActivity.this).execute(courierCommand).get();
+                            responseShift = (String) new SocketAsyncTask(MyOrdersFragment.HOST, OdometerInfoActivity.this).execute(courierCommand).get();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -132,14 +145,15 @@ public class OdometerInfoActivity extends AppCompatActivity {
                             }
                         } else {
                             sharedPreferences.edit().putBoolean("correctCloseShift", false).apply();
-                            //TODO save odometer data and photo
-
-                            stopService(new Intent(getApplicationContext(), TrackWritingService.class));
+                            String encoded = Base64.encodeToString(b, Base64.DEFAULT);
+                            sharedPreferences.edit().putString("photo", encoded).apply();
+                            sharedPreferences.edit().putString("odometerData", String.valueOf(odometerDataVal)).apply();
                             MyOrdersFragment.serviceStarted = false;
                             sharedPreferences.edit().putBoolean("startShift", false).apply();
                             Intent intent = new Intent(OdometerInfoActivity.this, LoginActivity.class);
                             startActivity(intent);
                             OrdersActivity.fa.finish();
+                            stopService(new Intent(getApplicationContext(), TrackWritingService.class));
                             finish();
                         }
                     }
@@ -150,6 +164,12 @@ public class OdometerInfoActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private byte [] getByteArray (Bitmap bitmap){
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
+        return baos.toByteArray();
     }
 
 }

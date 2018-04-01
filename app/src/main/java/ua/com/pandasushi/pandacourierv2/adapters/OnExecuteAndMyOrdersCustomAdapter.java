@@ -47,6 +47,7 @@ import ua.com.pandasushi.database.common.CourierCommand;
 import ua.com.pandasushi.database.common.CourierOrder;
 import ua.com.pandasushi.database.common.gps.models.Points;
 import ua.com.pandasushi.pandacourierv2.DBHelper;
+import ua.com.pandasushi.pandacourierv2.activities.LoginActivity;
 import ua.com.pandasushi.pandacourierv2.activities.OrdersActivity;
 import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
 import ua.com.pandasushi.database.common.gps.models.Track;
@@ -83,53 +84,33 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                 CourierCommand courierCommand = new CourierCommand();
                 courierCommand.setCourierId(courierId);
                 courierCommand.setCommand(Commands.CHECK);
-                String response = (String) new SocketAsyncTask().execute(courierCommand).get();
+                String response = (String) new SocketAsyncTask(MyOrdersFragment.HOST).execute(courierCommand).get();
                 if (response.equals("OK")){
+                    Track track = TrackWritingService.track;
                     context.stopService(new Intent(context, TrackWritingService.class));
                     MyOrdersFragment.serviceStarted = false;
+                    sharedPreferences.edit().putBoolean("connectionForMyOrders", true).apply();
 
-                    String response2 = null;
-                    for (CourierOrder order: myOrders){
+                    String response2;
+                    if (track != null){
                         CourierCommand courierCommand2 = new CourierCommand();
                         courierCommand2.setCourierId(courierId);
-                        courierCommand2.setOrder(order);
-                        courierCommand2.setCommand(Commands.UPDATE_ORDER);
-                        response2 = (String) new SocketAsyncTask().execute(courierCommand2).get();
-                    }
-                    if (response2 != null){
-                        if (response2.equals("OK")){
-                            CourierCommand courierCommand3 = new CourierCommand();
-                            courierCommand3.setCourierId(courierId);
-                            courierCommand3.setCommand(Commands.GET_ORDER_LIST);
-                            ArrayList<CourierOrder> orders = OrdersActivity.refreshOrderList();
+                        courierCommand2.setTrack(track);
+                        courierCommand2.setCommand(Commands.SAVE_TRACK);
+                        response2 = (String) new SocketAsyncTask(MyOrdersFragment.HOST).execute(courierCommand2).get();
+                        if (response2 != null) {
+                            if (response2.equals("OK")){
+                                CourierCommand courierCommand3 = new CourierCommand();
+                                courierCommand3.setCourierId(courierId);
+                                courierCommand3.setCommand(Commands.GET_ORDER_LIST);
+                                ArrayList<CourierOrder> orders = OrdersActivity.refreshOrderList();
 
-                            sharedPreferences.edit().putBoolean("connectionForMyOrders", true).apply();
+                                if (orders != null){
+                                    sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
+                                }
 
-                            if (orders != null){
-                                sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
+                                handler.removeCallbacks(this);
                             }
-                        }
-                    }
-
-                    Track track = null;
-                    SQLiteDatabase db = dbHelper.getWritableDatabase();
-                    Cursor cursor = db.query("trackdata", null, null, null, null, null, null);
-                    if (cursor.moveToFirst()) {
-                        byte[] blob = cursor.getBlob(cursor.getColumnIndex("track"));
-                        String json = new String(blob);
-                        Gson gson = new Gson();
-                        track = gson.fromJson(json, new TypeToken<Track>(){}.getType());
-                    }
-                    cursor.close();
-                    db.close();
-
-                    if (track != null){
-                        CourierCommand courierCommand4 = new CourierCommand();
-                        courierCommand4.setCourierId(courierId);
-                        courierCommand4.setCommand(Commands.SAVE_TRACK);
-                        String response3 = (String) new SocketAsyncTask().execute(courierCommand4).get();
-                        if (response3.equals("OK")){
-                            handler.removeCallbacks(this);
                         }
                     } else {
                         Toast toast = Toast.makeText(getContext().getApplicationContext(),
@@ -310,7 +291,7 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                 order.setSendTime(new Date());
                                                 courierCommand.setOrder(order);
                                                 courierCommand.setCommand(Commands.UPDATE_ORDER);
-                                                String response = (String) new SocketAsyncTask().execute(courierCommand).get();
+                                                String response = (String) new SocketAsyncTask(MyOrdersFragment.HOST).execute(courierCommand).get();
                                                 if (response.equals("OK")){
                                                     ArrayList<CourierOrder> orders = OrdersActivity.refreshOrderList();
 
@@ -322,10 +303,7 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
 
                                                     if (MyOrdersFragment.myOrdersNotDelivered.size() == 0){
                                                         TrackWritingService.courierId = courierId;
-                                                        TrackWritingService.orders = new ArrayList<>();
                                                     }
-
-                                                    TrackWritingService.orders.add(order);
 
                                                     MyOrdersFragment.myOrdersNotDelivered.add(order);
 
@@ -399,7 +377,7 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                 courierCommand.setCourierId(null);
                                                 courierCommand.setOrder(order);
                                                 courierCommand.setCommand(Commands.UPDATE_ORDER);
-                                                String response = (String) new SocketAsyncTask().execute(courierCommand).get();
+                                                String response = (String) new SocketAsyncTask(MyOrdersFragment.HOST).execute(courierCommand).get();
                                                 if (response.equals("OK")){
                                                     CourierCommand courierCommand2 = new CourierCommand();
                                                     courierCommand2.setCourierId(courierId);
@@ -431,7 +409,6 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                     if (MyOrdersFragment.myOrdersNotDelivered.size() == 0){
                                                         context.stopService(new Intent(context, TrackWritingService.class));
                                                         MyOrdersFragment.serviceStarted = false;
-                                                        TrackWritingService.orders = new ArrayList<>();
                                                     }
                                                 }
                                             } catch (Exception e) {
@@ -466,9 +443,8 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                     try {
                                                         CourierCommand courierCommand = new CourierCommand();
                                                         courierCommand.setCourierId(courierId);
-                                                        courierCommand.setOrder(courierOrder);
-                                                        courierCommand.setCommand(Commands.UPDATE_ORDER);
-                                                        String response = (String) new SocketAsyncTask().execute(courierCommand).get();
+                                                        courierCommand.setCommand(Commands.CHECK);
+                                                        String response = (String) new SocketAsyncTask(MyOrdersFragment.HOST).execute(courierCommand).get();
                                                         if (response.equals("OK")){
                                                             sharedPreferences.edit().putBoolean("connectionForMyOrders", true).apply();
                                                             CourierCommand courierCommand2 = new CourierCommand();
@@ -480,19 +456,13 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                                 sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
                                                             }
 
-                                                            Iterator itr = MyOrdersFragment.myOrdersNotDelivered.iterator();
-                                                            while (itr.hasNext())
-                                                            {
-                                                                CourierOrder courierOrderToRemove = (CourierOrder) itr.next();
-                                                                if (courierOrderToRemove.getOrderID().equals(order.getOrderID())){
-                                                                    itr.remove();
-                                                                }
-                                                            }
-
                                                             String myOrdersND = gson.toJson(MyOrdersFragment.myOrdersNotDelivered);
 
                                                             sharedPreferences.edit().putString("myOrdersNotDelivered", myOrdersND).apply();
 
+                                                            Toast toast = Toast.makeText(getContext().getApplicationContext(),
+                                                                    getContext().getString(R.string.didnt_go), Toast.LENGTH_LONG);
+                                                            toast.show();
                                                         }
 
 
@@ -506,9 +476,8 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                             CourierOrder courierOrderToRemove = (CourierOrder) itr.next();
                                                             if (courierOrderToRemove.getOrderID().equals(order.getOrderID())){
                                                                 itr.remove();
-
+                                                                TrackWritingService.orders.add(courierOrder);
                                                                 String myOrdersND = gson.toJson(MyOrdersFragment.myOrdersNotDelivered);
-
                                                                 sharedPreferences.edit().putString("myOrdersNotDelivered", myOrdersND).apply();
                                                             }
                                                         }
@@ -530,9 +499,8 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                     try {
                                                         CourierCommand courierCommand = new CourierCommand();
                                                         courierCommand.setCourierId(courierId);
-                                                        courierCommand.setOrder(courierOrder);
-                                                        courierCommand.setCommand(Commands.UPDATE_ORDER);
-                                                        String response = (String) new SocketAsyncTask().execute(courierCommand).get();
+                                                        courierCommand.setCommand(Commands.CHECK);
+                                                        String response = (String) new SocketAsyncTask(MyOrdersFragment.HOST).execute(courierCommand).get();
                                                         if (response.equals("OK")){
                                                             sharedPreferences.edit().putBoolean("connectionForMyOrders", true).apply();
                                                             CourierCommand courierCommand2 = new CourierCommand();
@@ -544,19 +512,13 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                                 sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
                                                             }
 
-                                                            Iterator itr = MyOrdersFragment.myOrdersNotDelivered.iterator();
-                                                            while (itr.hasNext())
-                                                            {
-                                                                CourierOrder courierOrderToRemove = (CourierOrder) itr.next();
-                                                                if (courierOrderToRemove.getOrderID().equals(order.getOrderID())){
-                                                                    itr.remove();
-                                                                }
-                                                            }
-
                                                             String myOrdersND = gson.toJson(MyOrdersFragment.myOrdersNotDelivered);
 
                                                             sharedPreferences.edit().putString("myOrdersNotDelivered", myOrdersND).apply();
 
+                                                            Toast toast = Toast.makeText(getContext().getApplicationContext(),
+                                                                    getContext().getString(R.string.didnt_go), Toast.LENGTH_LONG);
+                                                            toast.show();
                                                         }
 
 
@@ -570,7 +532,7 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                             CourierOrder courierOrderToRemove = (CourierOrder) itr.next();
                                                             if (courierOrderToRemove.getOrderID().equals(order.getOrderID())){
                                                                 itr.remove();
-
+                                                                TrackWritingService.orders.add(courierOrder);
                                                                 String myOrdersND = gson.toJson(MyOrdersFragment.myOrdersNotDelivered);
 
                                                                 sharedPreferences.edit().putString("myOrdersNotDelivered", myOrdersND).apply();

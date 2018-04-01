@@ -3,6 +3,7 @@ package ua.com.pandasushi.pandacourierv2.fragments;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
@@ -29,6 +30,7 @@ import java.util.Map;
 import ua.com.pandasushi.database.common.Commands;
 import ua.com.pandasushi.database.common.CourierCommand;
 import ua.com.pandasushi.database.common.CourierOrder;
+import ua.com.pandasushi.pandacourierv2.activities.LoginActivity;
 import ua.com.pandasushi.pandacourierv2.activities.OrdersActivity;
 import ua.com.pandasushi.pandacourierv2.adapters.OnExecuteAndMyOrdersCustomAdapter;
 import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
@@ -46,6 +48,7 @@ public class MyOrdersFragment extends Fragment {
     private final String ATTRIBUTE_NAME_COURIER_ID = "courier id";
 
     public static List<CourierOrder> myOrdersNotDelivered;
+    public static String HOST;
 
     private List<CourierOrder> orders;
     private List<CourierOrder> myOrders;
@@ -74,60 +77,22 @@ public class MyOrdersFragment extends Fragment {
 
     public static boolean serviceStarted = false;
 
-
-    Runnable refreshOrdersList = new Runnable() {
+    Runnable refreshOrdersListAndCheckingForStartService = new Runnable() {
         @Override
         public void run() {
             createCustomAdapter();
-            handler.postDelayed(this, 10000);
-        }
-    };
 
-    Runnable refreshOrdersListIfSPOrdersChanged = new Runnable() {
-        @Override
-        public void run() {
-            String changedOrderJSON = sharedPreferences.getString("orders", "");
-            if (!changedOrderJSON.equals("")){
-                if (!changedOrderJSON.equals(ordersJSON)){
-                    createCustomAdapter();
-                }
-            }
-            handler.postDelayed(this, 1000);
-        }
-    };
-
-    Runnable refreshOrdersListIfSPMapsChanged = new Runnable() {
-        @Override
-        public void run() {
-            String changeMaps = sharedPreferences.getString("maps", "GoogleMaps");
-            if (!changeMaps.equals(maps)){
-                createCustomAdapter();
-            }
-            handler.postDelayed(this, 1000);
-        }
-    };
-
-    Runnable refreshOrdersListIfIsDelivered = new Runnable() {
-        @Override
-        public void run() {
-            isConnected = sharedPreferences.getBoolean("connectionForMyOrders", true);
-            handler.postDelayed(this, 1000);
-        }
-    };
-
-    Runnable checkingForStartService = new Runnable() {
-        @Override
-        public void run() {
             if (MyOrdersFragment.myOrdersNotDelivered.size() != 0){
                 try {
                     CourierCommand courierCommand = new CourierCommand();
                     courierCommand.setCourierId(courierId);
                     courierCommand.setCommand(Commands.CHECK);
-                    String response = (String) new SocketAsyncTask().execute(courierCommand).get();
+                    String response = (String) new SocketAsyncTask(HOST).execute(courierCommand).get();
                     if (response == null){
                         if (!serviceStarted){
                             getContext().startService(new Intent(getContext(), TrackWritingService.class));
                             serviceStarted = true;
+                            startMoving.setTextColor(Color.GREEN);
                             handler.post(setTrackLength);
                         }
                     }
@@ -136,11 +101,34 @@ public class MyOrdersFragment extends Fragment {
                     if (!serviceStarted){
                         getContext().startService(new Intent(getContext(), TrackWritingService.class));
                         serviceStarted = true;
+                        startMoving.setTextColor(Color.GREEN);
                         handler.post(setTrackLength);
                     }
                 }
             }
+
             handler.postDelayed(this, 10000);
+        }
+    };
+
+    Runnable refreshOrdersListIfSPMapsOrOrdersChangedOrDelivered = new Runnable() {
+        @Override
+        public void run() {
+            String changeMaps = sharedPreferences.getString("maps", "GoogleMaps");
+            if (!changeMaps.equals(maps)){
+                createCustomAdapter();
+            }
+
+            String changedOrderJSON = sharedPreferences.getString("orders", "");
+            if (!changedOrderJSON.equals("")){
+                if (!changedOrderJSON.equals(ordersJSON)){
+                    createCustomAdapter();
+                }
+            }
+
+            HOST = sharedPreferences.getString("serverHost", "192.168.1.72");
+            isConnected = sharedPreferences.getBoolean("connectionForMyOrders", true);
+            handler.postDelayed(this, 1000);
         }
     };
 
@@ -149,10 +137,17 @@ public class MyOrdersFragment extends Fragment {
         public void run() {
             if (serviceStarted){
                 if (TrackWritingService.lenghtOfTrack != null){
-                    mileage.setText(TrackWritingService.lenghtOfTrack + " " + getContext().getString(R.string.km));
-                    handler.postDelayed(this, 2000);
+                    String [] length = TrackWritingService.lenghtOfTrack.split("\\.");
+                    mileage.setText(length[0] + " " + getContext().getString(R.string.m));
                 }
+                handler.postDelayed(this, 2000);
             } else {
+                startMoving.setTextColor(Color.WHITE);
+                try {
+                    mileage.setText("0 " + getString(R.string.m));
+                } catch (Exception e){
+
+                }
                 handler.removeCallbacks(this);
             }
         }
@@ -161,6 +156,18 @@ public class MyOrdersFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.fragment_my_orders, container, false);
+
+        try{
+            CourierCommand courierCommand = new CourierCommand();
+            courierCommand.setCourierId(courierId);
+            courierCommand.setCommand(Commands.CHECK);
+            String response = (String) new SocketAsyncTask(HOST).execute(courierCommand).get();
+            if (response != null){
+                sharedPreferences.edit().putBoolean("connectionForMyOrders", true).apply();
+            }
+        } catch (Exception e){
+            e.printStackTrace();
+        }
 
         listView = rootView.findViewById(R.id.lvMyOrders);
 
@@ -178,7 +185,9 @@ public class MyOrdersFragment extends Fragment {
 
         String myOrdersND = sharedPreferences.getString("myOrdersNotDelivered", "");
 
-        myOrdersNotDelivered = gson.fromJson(myOrdersND, new TypeToken<List<CourierOrder>>(){}.getType());
+        if (!myOrdersND.equals("")){
+            myOrdersNotDelivered = gson.fromJson(myOrdersND, new TypeToken<List<CourierOrder>>(){}.getType());
+        }
 
         if (myOrdersNotDelivered == null){
             myOrdersNotDelivered = new ArrayList<>();
@@ -186,19 +195,26 @@ public class MyOrdersFragment extends Fragment {
 
         createCustomAdapter();
 
-        handler.post(refreshOrdersList);
-        handler.post(refreshOrdersListIfIsDelivered);
-        handler.postDelayed(refreshOrdersListIfSPMapsChanged,2000);
-        handler.postDelayed(refreshOrdersListIfSPOrdersChanged,3000);
-        handler.post(checkingForStartService);
+        handler.post(refreshOrdersListAndCheckingForStartService);
+        handler.post(refreshOrdersListIfSPMapsOrOrdersChangedOrDelivered);
 
         startMoving.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (myOrdersNotDelivered.size() != 0){
-                    getContext().startService(new Intent(getContext(), TrackWritingService.class));
-                    serviceStarted = true;
-                    handler.post(setTrackLength);
+                    if (!serviceStarted){
+                        getContext().startService(new Intent(getContext(), TrackWritingService.class));
+                        serviceStarted = true;
+                        startMoving.setTextColor(Color.GREEN);
+                        Toast toast = Toast.makeText(getContext().getApplicationContext(),
+                                getContext().getString(R.string.record_track), Toast.LENGTH_LONG);
+                        toast.show();
+                        handler.post(setTrackLength);
+                    } else {
+                        Toast toast = Toast.makeText(getContext().getApplicationContext(),
+                                getContext().getString(R.string.record_track_started), Toast.LENGTH_LONG);
+                        toast.show();
+                    }
                 } else {
                     Toast toast = Toast.makeText(getContext().getApplicationContext(),
                             getContext().getString(R.string.cannot_start_trip), Toast.LENGTH_LONG);
@@ -215,10 +231,8 @@ public class MyOrdersFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        handler.removeCallbacks(refreshOrdersList);
-        handler.removeCallbacks(refreshOrdersListIfSPOrdersChanged);
-        handler.removeCallbacks(refreshOrdersListIfSPMapsChanged);
-        handler.removeCallbacks(refreshOrdersListIfIsDelivered);
+        handler.removeCallbacks(refreshOrdersListAndCheckingForStartService);
+        handler.removeCallbacks(refreshOrdersListIfSPMapsOrOrdersChangedOrDelivered);
     }
 
     private synchronized void createCustomAdapter(){

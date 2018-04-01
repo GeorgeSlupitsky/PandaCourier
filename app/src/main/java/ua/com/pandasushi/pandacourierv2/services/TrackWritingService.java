@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Service;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.GpsStatus;
@@ -16,7 +17,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
-import android.util.Log;
 
 import com.google.gson.Gson;
 
@@ -25,8 +25,8 @@ import ua.com.pandasushi.pandacourierv2.DBHelper;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import ua.com.pandasushi.database.common.gps.models.AVLData;
@@ -39,11 +39,14 @@ import ua.com.pandasushi.database.common.gps.models.Track;
 
 public class TrackWritingService extends Service implements LocationListener {
 
+    private final static String TAG = "my service log";
+
     private Handler handler;
 
     private static Location mLastLocation;
     private static Location mPreviousLocation;
 
+    private SharedPreferences sharedPreferences;
     private Double lat, lon;
     private LocationManager mLocationManager;
     private static String gprmc, gpgga;
@@ -57,16 +60,18 @@ public class TrackWritingService extends Service implements LocationListener {
     private DBHelper dbHelper;
     private String timeStart, timeStop;
     private Gson gson;
-    public static String lenghtOfTrack;
+    public static String lenghtOfTrack = "0.0";
     public static Integer courierId;
     public static List<CourierOrder> orders;
+    public static Track track;
 
     Runnable tracking = new Runnable() {
         public void run() {
 
             try {
+                timerCount++;
                 AVLData avlData = parse(gprmc, gpgga);
-                if (gpgga == null & Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (gpgga ==null & Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     mLastLocation = getLastKnownLocation();
                     if (mLastLocation != null) {
                         avlData = parseAvl(mLastLocation);
@@ -74,9 +79,9 @@ public class TrackWritingService extends Service implements LocationListener {
                 }
 
                 int minspeed = 3;
-                int maxspeed = 180;
+                int maxspeed = 160;
 
-                if (avlData.getLongitude() != 0.0 & avlData.getSpeed() >= minspeed & avlData.getSpeed() <= maxspeed) {
+                if (avlData.getLongitude() != 0.0 & avlData.getSpeed() <= maxspeed) {
                     if (points.size() == 0) {
                         points.add(avlData.getLatitude());
                         points.add(avlData.getLongitude());
@@ -84,17 +89,18 @@ public class TrackWritingService extends Service implements LocationListener {
 
                     }
                     isStart = true;
-
-                    timerCount = 0;
-                    pointsList.add(new Points("" + avlData.getLatitude(), "" + avlData.getLongitude()));
-                    pointsOnTrack++;
-                    lisAvldata.add(avlData);
-
-                    points.set(2, (double) avlData.getHeading());
-                    pointsList.add(new Points("" + avlData.getLatitude(), "" + avlData.getLongitude()));
-                    pointsOnTrack++;
-                    lisAvldata.add(avlData);
-
+                    if (2 != 0 && timerCount % 2 == 0 || 2 != 0 && timerCount - 2 >= 0) {
+                        timerCount = 0;
+                        pointsList.add(new Points("" + avlData.getLatitude(), "" + avlData.getLongitude()));
+                        pointsOnTrack++;
+                        lisAvldata.add(avlData);
+                    }
+                    if (15 != 0 & avlData.getHeading() != points.get(2) & Math.abs((int) avlData.getHeading() - points.get(2).intValue()) >= 15) {
+                        points.set(2, (double) avlData.getHeading());
+                        pointsList.add(new Points("" + avlData.getLatitude(), "" + avlData.getLongitude()));
+                        pointsOnTrack++;
+                        lisAvldata.add(avlData);
+                    }
 
                     Location loc1 = new Location("");
                     loc1.setLatitude(points.get(0));
@@ -102,12 +108,16 @@ public class TrackWritingService extends Service implements LocationListener {
                     Location loc2 = new Location("");
                     loc2.setLatitude(avlData.getLatitude());
                     loc2.setLongitude(avlData.getLongitude());
+                    float bearing = loc1.bearingTo(loc2);
+                    int distanceInMeters = (int) loc1.distanceTo(loc2);
 
-                    points.set(0, avlData.getLatitude());
-                    points.set(1, avlData.getLongitude());
-                    pointsList.add(new Points("" + avlData.getLatitude(), "" + avlData.getLongitude()));
-                    pointsOnTrack++;
-                    lisAvldata.add(avlData);
+                    if (10 != 0 & avlData.getLatitude() != points.get(0) & Math.abs(distanceInMeters - 10) >= 10) {
+                        points.set(0, avlData.getLatitude());
+                        points.set(1, avlData.getLongitude());
+                        pointsList.add(new Points("" + avlData.getLatitude(), "" + avlData.getLongitude()));
+                        pointsOnTrack++;
+                        lisAvldata.add(avlData);
+                    }
 
                     if (pointsList.size() > 2) {
                         lenght = 0;
@@ -124,6 +134,7 @@ public class TrackWritingService extends Service implements LocationListener {
                     }
                 } else {
                     isStart = false;
+                    timerCount = 0;
                 }
 
 
@@ -131,10 +142,36 @@ public class TrackWritingService extends Service implements LocationListener {
                 currentLon = avlData.getLongitude();
 
             } catch (Exception x) {
-                Log.i("run Exeption", x.getMessage());
+                x.printStackTrace();
             }
             fullLenght = lenght;
             lenghtOfTrack = String.valueOf(fullLenght);
+
+            timeStop = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+            track.setTimeStart(timeStart);
+            track.setTimeStop(timeStop);
+            List<Points> pointsListWithoutDuplicate = new ArrayList<>();
+            Iterator<Points> itr = pointsList.iterator();
+            boolean firstPoint = true;
+            while (itr.hasNext()){
+                Points points = itr.next();
+                if (firstPoint){
+                    pointsListWithoutDuplicate.add(points);
+                    firstPoint = false;
+                }
+                if (itr.hasNext()){
+                    Points points2 = itr.next();
+                    if (!points.getLat().equals(points2.getLat()) || !points.getLon().equals(points2.getLon())){
+                        pointsListWithoutDuplicate.add(points2);
+                    }
+                }
+            }
+            track.setPoints(pointsListWithoutDuplicate);
+            track.setOrders(orders);
+            track.setCourierId(courierId);
+            track.setPointsOnTrack(pointsOnTrack);
+            track.setTrackLenght(lenghtOfTrack);
+
             handler.postDelayed(this, 1000);
         }
     };
@@ -143,9 +180,13 @@ public class TrackWritingService extends Service implements LocationListener {
     public void onCreate() {
         super.onCreate();
 
+        orders = new ArrayList<>();
+        track = new Track();
         handler = new Handler();
         dbHelper = new DBHelper(this);
         gson = new Gson();
+
+        sharedPreferences = getSharedPreferences("myPref", MODE_PRIVATE);
 
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
@@ -185,36 +226,18 @@ public class TrackWritingService extends Service implements LocationListener {
             String name = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date());
             cv.put("name", name);
             Track track = new Track();
-            track.setName(name);
             track.setTimeStart(timeStart);
             track.setTimeStop(timeStop);
             track.setPoints(pointsList);
             track.setOrders(orders);
             track.setCourierId(courierId);
-            ArrayList<Integer> speedList = new ArrayList<>();
-            ArrayList<Integer> altitudeList = new ArrayList<>();
-            int speed = 0, altitude = 0;
-            for (AVLData avlData : lisAvldata) {
-                speedList.add(avlData.getSpeed());
-                altitudeList.add(avlData.getAltitude());
-                speed += avlData.getSpeed();
-                altitude += avlData.getAltitude();
-            }
-            Collections.sort(speedList);
-            Collections.sort(altitudeList);
-            if (altitudeList.size() != 0) {
-                track.setMaxAltitude(String.valueOf(altitudeList.get(altitudeList.size() - 1)) + " m");
-                track.setAverageSpeed(String.valueOf(speed / speedList.size()) + " km/h");
-            }
-            if (speedList.size() != 0) {
-                track.setMaxSpeed(String.valueOf(speedList.get(speedList.size() - 1)) + " km/h");
-                track.setAverageAltitude(String.valueOf(altitude / altitudeList.size()) + " m");
-            }
-
-            track.setAvlDataList(lisAvldata);
             track.setPointsOnTrack(pointsOnTrack);
             track.setTrackLenght(String.valueOf(fullLenght));
+
             lenghtOfTrack = String.valueOf(fullLenght);
+
+            sharedPreferences.edit().putString("lastTrack", gson.toJson(track)).apply();
+
             cv.put("track", gson.toJson(track).getBytes());
             db.insert("trackdata", null, cv);
         }
@@ -280,7 +303,6 @@ public class TrackWritingService extends Service implements LocationListener {
             return avl;
 
         } catch (Exception e) {
-            Log.i("Exception", e.getMessage());
             avl.setHdop(500);
         }
         return avl;
@@ -312,7 +334,6 @@ public class TrackWritingService extends Service implements LocationListener {
 
     private Location getLastKnownLocation() {
         List<String> providers = mLocationManager.getProviders(true);
-        Log.i(providers.toString(), "                 ");
         Location bestLocation = null;
         for (String provider : providers) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {

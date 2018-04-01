@@ -54,7 +54,9 @@ public class ClosedOrdersAdapter extends ArrayAdapter<Map<String, Object>> {
         holder.addressClosed = row.findViewById(R.id.addressClosed);
         holder.trackLength = row.findViewById(R.id.trackLength);
 
-        holder.trackLength.setText(track.getTrackLenght());
+        String[] length = track.getTrackLenght().split("\\.");
+        holder.trackLength.setText(length[0] + " " + getContext().getString(R.string.m));
+
 
         List <CourierOrder> orders = track.getOrders();
 

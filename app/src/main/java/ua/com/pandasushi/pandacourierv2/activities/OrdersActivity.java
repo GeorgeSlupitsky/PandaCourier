@@ -46,12 +46,15 @@ public class OrdersActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
 
     private static ArrayList<CourierOrder> orders;
+    private Gson gson;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         fa = this;
+
+        gson = new Gson();
 
         setContentView(R.layout.activity_orders);
 
@@ -121,7 +124,7 @@ public class OrdersActivity extends AppCompatActivity {
             courierCommand.setCourierId(courierId);
             courierCommand.setCommand(Commands.GET_ORDER_LIST);
 
-            orders = (ArrayList) new SocketAsyncTask().execute(courierCommand).get();
+            orders = (ArrayList) new SocketAsyncTask(MyOrdersFragment.HOST).execute(courierCommand).get();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -143,5 +146,14 @@ public class OrdersActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (MyOrdersFragment.myOrdersNotDelivered.size() != 0){
+            sharedPreferences.edit().putString("myOrdersNotDelivered", gson.toJson(MyOrdersFragment.myOrdersNotDelivered)).apply();
+        } else {
+            sharedPreferences.edit().putString("myOrdersNotDelivered", "").apply();
+        }
 
+    }
 }
