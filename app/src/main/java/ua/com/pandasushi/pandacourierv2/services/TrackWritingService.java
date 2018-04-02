@@ -1,6 +1,8 @@
 package ua.com.pandasushi.pandacourierv2.services;
 
 import android.Manifest;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -17,8 +19,11 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 
 import com.google.gson.Gson;
+import com.pandasushi.pandacourierv2.R;
 
 import ua.com.pandasushi.database.common.CourierOrder;
 import ua.com.pandasushi.pandacourierv2.DBHelper;
@@ -39,8 +44,6 @@ import ua.com.pandasushi.database.common.gps.models.Track;
 
 public class TrackWritingService extends Service implements LocationListener {
 
-    private final static String TAG = "my service log";
-
     private Handler handler;
 
     private static Location mLastLocation;
@@ -54,16 +57,21 @@ public class TrackWritingService extends Service implements LocationListener {
     private ArrayList<AVLData> lisAvldata = new ArrayList<>();
     public static Double currentLat, currentLon;
     private boolean isStart = false;
-    private double lenght, fullLenght;
-    private ArrayList<Points> pointsList = new ArrayList<>();
-    private ArrayList<Double> points = new ArrayList<>();
+    private static double lenght, fullLenght;
+    private static ArrayList<Points> pointsList = new ArrayList<>();
+    private static ArrayList<Double> points = new ArrayList<>();
     private DBHelper dbHelper;
-    private String timeStart, timeStop;
+    private static String timeStart, timeStop;
     private Gson gson;
     public static String lenghtOfTrack = "0.0";
     public static Integer courierId;
-    public static List<CourierOrder> orders;
-    public static Track track;
+    public static List<CourierOrder> orders = new ArrayList<>();
+    public static Track track = new Track();
+
+    private NotificationCompat.Builder builder;
+    private Notification notification;
+
+    private final static String TAG = "TrackService";
 
     private boolean appDestroy = false;
 
@@ -83,7 +91,7 @@ public class TrackWritingService extends Service implements LocationListener {
                 int minspeed = 3;
                 int maxspeed = 160;
 
-                if (avlData.getLongitude() != 0.0 & avlData.getSpeed() <= maxspeed) {
+                if (avlData.getLongitude() != 0.0 & avlData.getSpeed() >= minspeed & avlData.getSpeed() <= maxspeed) {
                     if (points.size() == 0) {
                         points.add(avlData.getLatitude());
                         points.add(avlData.getLongitude());
@@ -94,13 +102,11 @@ public class TrackWritingService extends Service implements LocationListener {
                     if (2 != 0 && timerCount % 2 == 0 || 2 != 0 && timerCount - 2 >= 0) {
                         timerCount = 0;
                         pointsList.add(new Points("" + avlData.getLatitude(), "" + avlData.getLongitude()));
-                        pointsOnTrack++;
                         lisAvldata.add(avlData);
                     }
                     if (15 != 0 & avlData.getHeading() != points.get(2) & Math.abs((int) avlData.getHeading() - points.get(2).intValue()) >= 15) {
                         points.set(2, (double) avlData.getHeading());
                         pointsList.add(new Points("" + avlData.getLatitude(), "" + avlData.getLongitude()));
-                        pointsOnTrack++;
                         lisAvldata.add(avlData);
                     }
 
@@ -117,7 +123,6 @@ public class TrackWritingService extends Service implements LocationListener {
                         points.set(0, avlData.getLatitude());
                         points.set(1, avlData.getLongitude());
                         pointsList.add(new Points("" + avlData.getLatitude(), "" + avlData.getLongitude()));
-                        pointsOnTrack++;
                         lisAvldata.add(avlData);
                     }
 
@@ -155,16 +160,19 @@ public class TrackWritingService extends Service implements LocationListener {
             List<Points> pointsListWithoutDuplicate = new ArrayList<>();
             Iterator<Points> itr = pointsList.iterator();
             boolean firstPoint = true;
+            pointsOnTrack = 0;
             while (itr.hasNext()){
                 Points points = itr.next();
                 if (firstPoint){
                     pointsListWithoutDuplicate.add(points);
+                    pointsOnTrack++;
                     firstPoint = false;
                 }
                 if (itr.hasNext()){
                     Points points2 = itr.next();
                     if (!points.getLat().equals(points2.getLat()) || !points.getLon().equals(points2.getLon())){
                         pointsListWithoutDuplicate.add(points2);
+                        pointsOnTrack++;
                     }
                 }
             }
@@ -174,6 +182,18 @@ public class TrackWritingService extends Service implements LocationListener {
             track.setPointsOnTrack(pointsOnTrack);
             track.setTrackLenght(lenghtOfTrack);
 
+            builder = new NotificationCompat.Builder(TrackWritingService.this)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setOngoing(true)
+                    .setContentTitle(getString(R.string.record_track_is_running))
+                    .setContentText(lenghtOfTrack + " " + getString(R.string.m));
+
+            notification = builder.build();
+
+            NotificationManager notificationManager =
+                    (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            notificationManager.notify(1, notification);
+
             handler.postDelayed(this, 1000);
         }
     };
@@ -182,15 +202,17 @@ public class TrackWritingService extends Service implements LocationListener {
     public void onCreate() {
         super.onCreate();
 
-        orders = new ArrayList<>();
-        track = new Track();
         handler = new Handler();
         dbHelper = new DBHelper(this);
         gson = new Gson();
 
         sharedPreferences = getSharedPreferences("myPref", MODE_PRIVATE);
 
+        courierId = sharedPreferences.getInt("courierId", -1);
+
         sharedPreferences.edit().putBoolean("appDestroy", false).apply();
+
+        sharedPreferences.edit().putBoolean("serviceStarted", true).apply();
 
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
@@ -216,20 +238,27 @@ public class TrackWritingService extends Service implements LocationListener {
             }
         });
 
+        if (!appDestroy){
+            builder = new NotificationCompat.Builder(this)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setOngoing(true)
+                    .setContentTitle(getString(R.string.record_track_is_running))
+                    .setContentText(lenghtOfTrack + " " + getString(R.string.m));
+
+            notification = builder.build();
+
+
+            NotificationManager notificationManager =
+                    (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            notificationManager.notify(1, notification);
+        }
+
         handler.post(tracking);
-        timeStart = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
-        String trackJSON = sharedPreferences.getString("trackAfterAppDestroy", "");
-        if (!trackJSON.equals("")){
-            track = gson.fromJson(trackJSON, Track.class);
-            handler.post(tracking);
-        }
-
-
         return START_STICKY;
     }
 
@@ -243,8 +272,6 @@ public class TrackWritingService extends Service implements LocationListener {
             Intent broadcastIntent = new Intent("RestartTrackWritingService");
             sendBroadcast(broadcastIntent);
             handler.removeCallbacks(tracking);
-
-            sharedPreferences.edit().putString("trackAfterAppDestroy", gson.toJson(track)).apply();
         } else {
             if (pointsList.size() >= 2) {
                 timeStop = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
@@ -252,9 +279,9 @@ public class TrackWritingService extends Service implements LocationListener {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
                 String name = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date());
                 cv.put("name", name);
-                Track track = new Track();
-                track.setTimeStart(timeStart);
-                track.setTimeStop(timeStop);
+                Track trackSaved = new Track();
+                trackSaved.setTimeStart(timeStart);
+                trackSaved.setTimeStop(timeStop);
                 List<Points> pointsListWithoutDuplicate = new ArrayList<>();
                 Iterator<Points> itr = pointsList.iterator();
                 boolean firstPoint = true;
@@ -271,11 +298,11 @@ public class TrackWritingService extends Service implements LocationListener {
                         }
                     }
                 }
-                track.setPoints(pointsListWithoutDuplicate);
-                track.setOrders(orders);
-                track.setCourierId(courierId);
-                track.setPointsOnTrack(pointsOnTrack);
-                track.setTrackLenght(String.valueOf(fullLenght));
+                trackSaved.setPoints(pointsListWithoutDuplicate);
+                trackSaved.setOrders(orders);
+                trackSaved.setCourierId(courierId);
+                trackSaved.setPointsOnTrack(pointsOnTrack);
+                trackSaved.setTrackLenght(String.valueOf(fullLenght));
 
                 lenghtOfTrack = String.valueOf(fullLenght);
 
@@ -283,7 +310,23 @@ public class TrackWritingService extends Service implements LocationListener {
 
                 cv.put("track", gson.toJson(track).getBytes());
                 db.insert("trackdata", null, cv);
+
             }
+
+            timeStart = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+            lenght = 0.0;
+            fullLenght = 0.0;
+            lenghtOfTrack = "0.0";
+            track = new Track();
+            pointsList = new ArrayList<>();
+            orders = new ArrayList<>();
+            points = new ArrayList<>();
+
+            NotificationManager notificationManager =
+                    (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            notificationManager.cancel(1);
+
+            sharedPreferences.edit().putBoolean("serviceStarted", false).apply();
 
             handler.removeCallbacks(tracking);
         }

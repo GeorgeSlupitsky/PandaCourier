@@ -147,16 +147,6 @@ public class OrdersActivity extends AppCompatActivity {
         }
     }
 
-    private boolean isMyServiceRunning(Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -166,10 +156,9 @@ public class OrdersActivity extends AppCompatActivity {
             sharedPreferences.edit().putString("myOrdersNotDelivered", "").apply();
         }
 
-        if (isMyServiceRunning(TrackWritingService.class)){
-            Intent intent = new Intent(this, TrackWritingService.class);
+        if (MyOrdersFragment.serviceStarted){
             sharedPreferences.edit().putBoolean("appDestroy", true).apply();
-            stopService(intent);
+            stopService(new Intent(this, TrackWritingService.class));
         }
 
     }

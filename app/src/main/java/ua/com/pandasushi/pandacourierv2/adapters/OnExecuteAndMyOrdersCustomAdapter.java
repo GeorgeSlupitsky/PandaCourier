@@ -301,10 +301,6 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                         sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
                                                     }
 
-                                                    if (MyOrdersFragment.myOrdersNotDelivered.size() == 0){
-                                                        TrackWritingService.courierId = courierId;
-                                                    }
-
                                                     MyOrdersFragment.myOrdersNotDelivered.add(order);
 
                                                     String myOrdersND = gson.toJson(MyOrdersFragment.myOrdersNotDelivered);

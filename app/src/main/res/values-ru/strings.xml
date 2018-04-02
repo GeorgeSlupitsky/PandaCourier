@@ -47,4 +47,6 @@
     <string name="record_track_started">Запись трека уже начата</string>
 
     <string name="server_host">IP сервера:</string>
+
+    <string name="record_track_is_running">Идет запись трека</string>
 </resources>

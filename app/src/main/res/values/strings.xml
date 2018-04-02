@@ -45,4 +45,6 @@
     <string name="record_track_started">Record of track has already started</string>
 
     <string name="server_host">Server IP:</string>
+
+    <string name="record_track_is_running">Track record is running</string>
 </resources>

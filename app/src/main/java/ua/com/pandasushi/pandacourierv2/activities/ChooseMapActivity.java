@@ -42,7 +42,8 @@ public class ChooseMapActivity extends AppCompatActivity {
 
         maps = sharedPreferences.getString("maps", "GoogleMaps");
 
-        serverHost.setText(sharedPreferences.getString("serverHost", "192.168.1.72"));
+//        serverHost.setText(sharedPreferences.getString("serverHost", "192.168.1.72"));
+        serverHost.setText(sharedPreferences.getString("serverHost", "192.168.88.94"));
 
         if (maps.equals("MapsME")){
             mapsMeRadio.setChecked(true);
