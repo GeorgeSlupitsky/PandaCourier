@@ -18,6 +18,7 @@ import android.widget.Toast;
 import com.pandasushi.pandacourierv2.R;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Date;
 
 import ua.com.pandasushi.database.common.Commands;
 import ua.com.pandasushi.database.common.CourierCommand;
@@ -43,7 +44,9 @@ public class OdometerInfoActivity extends AppCompatActivity {
 
     private SharedPreferences sharedPreferences;
 
-    private String responseShift;
+    private Integer responseStartShift;
+
+    private String responseEndShift;
 
     private boolean startShift;
 
@@ -100,14 +103,15 @@ public class OdometerInfoActivity extends AppCompatActivity {
                             courierCommand.setOdometer(odometerDataVal);
                             courierCommand.setPhoto(b);
                             courierCommand.setCommand(Commands.START_CHANGE);
-                            responseShift = (String) new SocketAsyncTask(LoginActivity.HOST, OdometerInfoActivity.this).execute(courierCommand).get();
+                            responseStartShift = (Integer) new SocketAsyncTask(LoginActivity.HOST, OdometerInfoActivity.this).execute(courierCommand).get();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
 
-                        if (responseShift != null){
-                            if (responseShift.equals("OK")){
+                        if (responseStartShift != null){
+                            if (responseStartShift >= 0){
                                 sharedPreferences.edit().putBoolean("startShift", true).apply();
+                                sharedPreferences.edit().putInt("shiftId", responseStartShift).apply();
                                 Intent intent = new Intent(OdometerInfoActivity.this, OrdersActivity.class);
                                 startActivity(intent);
                                 LoginActivity.fa.finish();
@@ -115,10 +119,9 @@ public class OdometerInfoActivity extends AppCompatActivity {
                             }
                         }
                     } else {
-                        Double addTripVal;
+                        Double addTripVal = 0.0;
                         if (!additionalTripData.getText().toString().equals("")){
                             addTripVal = Double.parseDouble(additionalTripData.getText().toString());
-                            odometerDataVal = odometerDataVal - addTripVal;
                         }
 
                         try {
@@ -127,15 +130,17 @@ public class OdometerInfoActivity extends AppCompatActivity {
                             CourierCommand courierCommand = new CourierCommand();
                             courierCommand.setCourierId(courierId);
                             courierCommand.setOdometer(odometerDataVal);
+                            courierCommand.setExtraTrip(addTripVal);
                             courierCommand.setPhoto(b);
+                            courierCommand.setShiftId(sharedPreferences.getInt("shiftId", 0));
                             courierCommand.setCommand(Commands.END_CHANGE);
-                            responseShift = (String) new SocketAsyncTask(MyOrdersFragment.HOST, OdometerInfoActivity.this).execute(courierCommand).get();
+                            responseEndShift = (String) new SocketAsyncTask(MyOrdersFragment.HOST, OdometerInfoActivity.this).execute(courierCommand).get();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
 
-                        if (responseShift != null){
-                            if (responseShift.equals("OK")){
+                        if (responseEndShift != null){
+                            if (responseEndShift.equals("OK")){
                                 sharedPreferences.edit().putBoolean("correctCloseShift", true).apply();
                                 sharedPreferences.edit().putBoolean("startShift", false).apply();
                                 Intent intent = new Intent(OdometerInfoActivity.this, LoginActivity.class);
@@ -148,8 +153,11 @@ public class OdometerInfoActivity extends AppCompatActivity {
                             String encoded = Base64.encodeToString(b, Base64.DEFAULT);
                             sharedPreferences.edit().putString("photo", encoded).apply();
                             sharedPreferences.edit().putString("odometerData", String.valueOf(odometerDataVal)).apply();
+                            sharedPreferences.edit().putString("addTripVal", String.valueOf(addTripVal)).apply();
                             MyOrdersFragment.serviceStarted = false;
                             sharedPreferences.edit().putBoolean("startShift", false).apply();
+                            sharedPreferences.edit().putLong("endShiftTime", new Date().getTime()).apply();
+
                             Intent intent = new Intent(OdometerInfoActivity.this, LoginActivity.class);
                             startActivity(intent);
                             OrdersActivity.fa.finish();

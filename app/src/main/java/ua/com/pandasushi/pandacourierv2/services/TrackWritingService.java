@@ -37,6 +37,7 @@ import java.util.List;
 import ua.com.pandasushi.database.common.gps.models.AVLData;
 import ua.com.pandasushi.database.common.gps.models.Points;
 import ua.com.pandasushi.database.common.gps.models.Track;
+import ua.com.pandasushi.pandacourierv2.activities.LoginActivity;
 
 /**
  * Created by postp on 18.03.2018.
@@ -223,8 +224,8 @@ public class TrackWritingService extends Service implements LocationListener {
             }
         }
 
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            return;
         }
         mLocationManager.addNmeaListener(new GpsStatus.NmeaListener() {
             public void onNmeaReceived(long timestamp, String nmea) {

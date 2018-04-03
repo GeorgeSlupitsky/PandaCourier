@@ -128,8 +128,8 @@ public class MyOrdersFragment extends Fragment {
                 }
             }
 
-//            HOST = sharedPreferences.getString("serverHost", "192.168.1.72");
-            HOST = sharedPreferences.getString("serverHost", "192.168.88.94");
+            HOST = sharedPreferences.getString("serverHost", "192.168.1.72");
+//            HOST = sharedPreferences.getString("serverHost", "192.168.88.94");
             isConnected = sharedPreferences.getBoolean("connectionForMyOrders", true);
             handler.postDelayed(this, 1000);
         }

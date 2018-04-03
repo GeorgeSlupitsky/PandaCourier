@@ -1,6 +1,7 @@
 package ua.com.pandasushi.database.common;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import ua.com.pandasushi.database.common.gps.models.Track;
 
@@ -11,6 +12,9 @@ public class CourierCommand implements Serializable {
     private Commands command;
     private String password;
     private Double odometer;
+    private Double extraTrip;
+    private Integer shiftId;
+    private Date timeOfClose;
     private byte [] photo;
 
     public String getPassword() {
@@ -67,5 +71,29 @@ public class CourierCommand implements Serializable {
 
     public void setPhoto(byte[] photo) {
         this.photo = photo;
+    }
+
+    public Double getExtraTrip() {
+        return extraTrip;
+    }
+
+    public void setExtraTrip(Double extraTrip) {
+        this.extraTrip = extraTrip;
+    }
+
+    public Integer getShiftId() {
+        return shiftId;
+    }
+
+    public void setShiftId(Integer shiftId) {
+        this.shiftId = shiftId;
+    }
+
+    public Date getTimeOfClose() {
+        return timeOfClose;
+    }
+
+    public void setTimeOfClose(Date timeOfClose) {
+        this.timeOfClose = timeOfClose;
     }
 }

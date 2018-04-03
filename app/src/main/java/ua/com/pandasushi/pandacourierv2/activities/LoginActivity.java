@@ -24,6 +24,7 @@ import com.google.gson.Gson;
 import com.pandasushi.pandacourierv2.R;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 import ua.com.pandasushi.database.common.Commands;
 import ua.com.pandasushi.database.common.Courier;
@@ -121,8 +122,8 @@ public class LoginActivity extends AppCompatActivity {
 
         sharedPreferences = getSharedPreferences("myPref", MODE_PRIVATE);
 
-//        HOST = sharedPreferences.getString("serverHost", "192.168.1.72");
-        HOST = sharedPreferences.getString("serverHost", "192.168.88.94");
+        HOST = sharedPreferences.getString("serverHost", "192.168.1.72");
+//        HOST = sharedPreferences.getString("serverHost", "192.168.88.94");
 
 
 
@@ -243,9 +244,14 @@ public class LoginActivity extends AppCompatActivity {
                                 String encoded = sharedPreferences.getString("photo", "");
                                 byte[] b = Base64.decode(encoded.getBytes(), Base64.DEFAULT);
                                 Double odometerDataVal = Double.parseDouble(sharedPreferences.getString("odometerData", "0"));
+                                Double addTripVal = Double.parseDouble(sharedPreferences.getString("addTripVal", "0"));
                                 CourierCommand courierCommand = new CourierCommand();
                                 courierCommand.setCourierId(courierId);
                                 courierCommand.setOdometer(odometerDataVal);
+                                courierCommand.setExtraTrip(addTripVal);
+                                courierCommand.setShiftId(sharedPreferences.getInt("shiftId", 0));
+                                Date timeOfClose = new Date(sharedPreferences.getLong("endShiftTime", 0));
+                                courierCommand.setTimeOfClose(timeOfClose);
                                 courierCommand.setPhoto(b);
                                 courierCommand.setCommand(Commands.END_CHANGE);
                                 responseShift = (String) new SocketAsyncTask(HOST).execute(courierCommand).get();
@@ -278,6 +284,11 @@ public class LoginActivity extends AppCompatActivity {
                                 Toast toast = Toast.makeText(getApplicationContext(),
                                         getString(R.string.connection_error), Toast.LENGTH_LONG);
                                 toast.show();
+                            }
+                        } else {
+                            Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                            if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
                             }
                         }
                     } else {
