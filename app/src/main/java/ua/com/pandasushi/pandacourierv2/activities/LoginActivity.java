@@ -122,8 +122,8 @@ public class LoginActivity extends AppCompatActivity {
 
         sharedPreferences = getSharedPreferences("myPref", MODE_PRIVATE);
 
-        HOST = sharedPreferences.getString("serverHost", "192.168.1.72");
-//        HOST = sharedPreferences.getString("serverHost", "192.168.88.94");
+//        HOST = sharedPreferences.getString("serverHost", "192.168.1.72");
+        HOST = sharedPreferences.getString("serverHost", "192.168.88.94");
 
 
 

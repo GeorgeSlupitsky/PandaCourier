@@ -1,10 +1,12 @@
 package ua.com.pandasushi.pandacourierv2.services;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -215,7 +217,7 @@ public class TrackWritingService extends Service implements LocationListener {
 
         sharedPreferences.edit().putBoolean("serviceStarted", true).apply();
 
-        mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         if (mLocationManager != null) {
             if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
@@ -225,9 +227,7 @@ public class TrackWritingService extends Service implements LocationListener {
         }
 
         if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-        mLocationManager.addNmeaListener(new GpsStatus.NmeaListener() {
+            mLocationManager.addNmeaListener(new GpsStatus.NmeaListener() {
             public void onNmeaReceived(long timestamp, String nmea) {
                 if (nmea.startsWith("$GPGGA")) {
                     sendGpgga(nmea);
@@ -237,7 +237,8 @@ public class TrackWritingService extends Service implements LocationListener {
                 }
 
             }
-        });
+            });
+        }
 
         if (!appDestroy){
             builder = new NotificationCompat.Builder(this)
