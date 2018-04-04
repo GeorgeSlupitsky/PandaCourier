@@ -41,4 +41,13 @@
         android:layout_centerVertical="true"
         android:text="@string/start_shift" />
 
+    <Button
+        android:id="@+id/server_host"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="41dp"
+        android:text="@string/settings" />
+
 </RelativeLayout>

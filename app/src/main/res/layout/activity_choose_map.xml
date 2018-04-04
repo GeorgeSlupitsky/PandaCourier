@@ -40,7 +40,7 @@
         android:textAppearance="?android:attr/textAppearanceLarge"/>
 
     <EditText
-        android:id="@+id/serverHost"
+        android:id="@+id/serverHostFromMap"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 

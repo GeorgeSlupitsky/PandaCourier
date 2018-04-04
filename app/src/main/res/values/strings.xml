@@ -47,4 +47,6 @@
     <string name="server_host">Server IP:</string>
 
     <string name="record_track_is_running">Track record is running</string>
+    <string name="gps_disable">GPS is disable. Track doesn`t record.</string>
+    <string name="turn_on_gps">Please turn on GPS. Click here.</string>
 </resources>

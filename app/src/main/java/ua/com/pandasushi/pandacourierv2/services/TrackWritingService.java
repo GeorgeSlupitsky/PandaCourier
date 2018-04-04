@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ContentValues;
 import android.content.Context;
@@ -77,9 +78,39 @@ public class TrackWritingService extends Service implements LocationListener {
     private final static String TAG = "TrackService";
 
     private boolean appDestroy = false;
+    private boolean showGPSNotification = false;
 
     Runnable tracking = new Runnable() {
         public void run() {
+
+            if (mLocationManager != null) {
+                if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                    if (!showGPSNotification){
+                        Intent resultIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        PendingIntent resultPendingIntent = PendingIntent.getActivity(TrackWritingService.this, 0, resultIntent,
+                                PendingIntent.FLAG_UPDATE_CURRENT);
+
+                        NotificationCompat.Builder builderForDisabledGPS = new NotificationCompat.Builder(TrackWritingService.this)
+                                .setSmallIcon(R.mipmap.ic_launcher)
+                                .setOngoing(true)
+                                .setContentTitle(getString(R.string.gps_disable))
+                                .setContentText(getString(R.string.turn_on_gps))
+                                .setContentIntent(resultPendingIntent);
+
+                        notification = builderForDisabledGPS.build();
+
+                        NotificationManager notificationManager =
+                                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                        notificationManager.notify(2, notification);
+                        showGPSNotification = true;
+                    }
+                } else {
+                    NotificationManager notificationManager =
+                            (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                    notificationManager.cancel(2);
+                    showGPSNotification = false;
+                }
+            }
 
             try {
                 timerCount++;
@@ -219,14 +250,8 @@ public class TrackWritingService extends Service implements LocationListener {
 
         mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-        if (mLocationManager != null) {
-            if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                Intent myIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                startActivity(myIntent);
-            }
-        }
-
         if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, this);
             mLocationManager.addNmeaListener(new GpsStatus.NmeaListener() {
             public void onNmeaReceived(long timestamp, String nmea) {
                 if (nmea.startsWith("$GPGGA")) {
@@ -241,6 +266,7 @@ public class TrackWritingService extends Service implements LocationListener {
         }
 
         if (!appDestroy){
+            timeStart = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
             builder = new NotificationCompat.Builder(this)
                     .setSmallIcon(R.mipmap.ic_launcher)
                     .setOngoing(true)
@@ -315,7 +341,6 @@ public class TrackWritingService extends Service implements LocationListener {
 
             }
 
-            timeStart = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
             lenght = 0.0;
             fullLenght = 0.0;
             lenghtOfTrack = "0.0";

@@ -49,4 +49,6 @@
     <string name="server_host">IP сервера:</string>
 
     <string name="record_track_is_running">Идет запись трека</string>
+    <string name="gps_disable">GPS выключенный. Трек не пишется.</string>
+    <string name="turn_on_gps">Пожалуйста, включите GPS. Нажмите сюда.</string>
 </resources>

@@ -44,6 +44,7 @@ public class LoginActivity extends AppCompatActivity {
     public static Activity fa;
 
     private Button startShift;
+    private Button serverHost;
     private EditText passwordET;
     private Spinner spinner;
     private String responseCheck;
@@ -119,6 +120,7 @@ public class LoginActivity extends AppCompatActivity {
         startShift = (Button) findViewById(R.id.start_shift);
         passwordET = (EditText) findViewById(R.id.password);
         spinner = (Spinner) findViewById(R.id.spinnerCourier);
+        serverHost = (Button) findViewById(R.id.server_host);
 
         sharedPreferences = getSharedPreferences("myPref", MODE_PRIVATE);
 
@@ -162,6 +164,14 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         courierName.setText(sharedPreferences.getString("courierName", ""));
+
+        serverHost.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(LoginActivity.this, ServerIPActivity.class);
+                startActivity(intent);
+            }
+        });
 
         startShift.setOnClickListener(view -> {
 

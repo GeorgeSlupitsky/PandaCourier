@@ -5,8 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
@@ -78,6 +80,8 @@ public class MyOrdersFragment extends Fragment {
 
     public static boolean serviceStarted = false;
 
+    private LocationManager mLocationManager;
+
     Runnable refreshOrdersListAndCheckingForStartService = new Runnable() {
         @Override
         public void run() {
@@ -91,8 +95,15 @@ public class MyOrdersFragment extends Fragment {
                     String response = (String) new SocketAsyncTask(HOST).execute(courierCommand).get();
                     if (response == null){
                         if (!serviceStarted){
-                            getContext().startService(new Intent(getContext(), TrackWritingService.class));
-                            serviceStarted = true;
+                            if (mLocationManager != null) {
+                                if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                                    Intent myIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                                    startActivity(myIntent);
+                                } else {
+                                    getContext().startService(new Intent(getContext(), TrackWritingService.class));
+                                    serviceStarted = true;
+                                }
+                            }
                         }
                         startMoving.setTextColor(Color.GREEN);
                         handler.post(setTrackLength);
@@ -100,15 +111,22 @@ public class MyOrdersFragment extends Fragment {
                 } catch (Exception e){
                     e.printStackTrace();
                     if (!serviceStarted){
-                        getContext().startService(new Intent(getContext(), TrackWritingService.class));
-                        serviceStarted = true;
+                        if (mLocationManager != null) {
+                            if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                                Intent myIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                                startActivity(myIntent);
+                            } else {
+                                getContext().startService(new Intent(getContext(), TrackWritingService.class));
+                                serviceStarted = true;
+                            }
+                        }
                     }
                     startMoving.setTextColor(Color.GREEN);
                     handler.post(setTrackLength);
                 }
             }
 
-            handler.postDelayed(this, 10000);
+            handler.postDelayed(this, 2000);
         }
     };
 
@@ -174,6 +192,8 @@ public class MyOrdersFragment extends Fragment {
             e.printStackTrace();
         }
 
+        mLocationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
+
         listView = rootView.findViewById(R.id.lvMyOrders);
 
         startMoving = rootView.findViewById(R.id.start_moving);
@@ -208,13 +228,20 @@ public class MyOrdersFragment extends Fragment {
             public void onClick(View view) {
                 if (myOrdersNotDelivered.size() != 0){
                     if (!serviceStarted){
-                        getContext().startService(new Intent(getContext(), TrackWritingService.class));
-                        serviceStarted = true;
-                        startMoving.setTextColor(Color.GREEN);
-                        Toast toast = Toast.makeText(getContext().getApplicationContext(),
-                                getContext().getString(R.string.record_track), Toast.LENGTH_LONG);
-                        toast.show();
-                        handler.post(setTrackLength);
+                        if (mLocationManager != null) {
+                            if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                                Intent myIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                                startActivity(myIntent);
+                            } else {
+                                getContext().startService(new Intent(getContext(), TrackWritingService.class));
+                                serviceStarted = true;
+                                startMoving.setTextColor(Color.GREEN);
+                                Toast toast = Toast.makeText(getContext().getApplicationContext(),
+                                        getContext().getString(R.string.record_track), Toast.LENGTH_LONG);
+                                toast.show();
+                                handler.post(setTrackLength);
+                            }
+                        }
                     } else {
                         Toast toast = Toast.makeText(getContext().getApplicationContext(),
                                 getContext().getString(R.string.record_track_started), Toast.LENGTH_LONG);

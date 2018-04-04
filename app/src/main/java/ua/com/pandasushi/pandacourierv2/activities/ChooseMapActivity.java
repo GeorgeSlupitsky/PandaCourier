@@ -37,7 +37,7 @@ public class ChooseMapActivity extends AppCompatActivity {
         radioGroup = (RadioGroup) findViewById(R.id.radioGroup);
         mapsMeRadio = (RadioButton) findViewById(R.id.mapsMeRadio);
         googleMapsRadio = (RadioButton) findViewById(R.id.googleMapsRadio);
-        serverHost = (EditText) findViewById(R.id.serverHost);
+        serverHost = (EditText) findViewById(R.id.serverHostFromMap);
         save = (Button) findViewById(R.id.saveBtn);
 
         maps = sharedPreferences.getString("maps", "GoogleMaps");
