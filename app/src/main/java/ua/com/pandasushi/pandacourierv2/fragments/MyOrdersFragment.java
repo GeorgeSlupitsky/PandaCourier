@@ -1,6 +1,5 @@
 package ua.com.pandasushi.pandacourierv2.fragments;
 
-import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,7 +9,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
 import android.support.v4.app.Fragment;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,7 +23,6 @@ import com.pandasushi.pandacourierv2.R;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,8 +30,6 @@ import java.util.Map;
 import ua.com.pandasushi.database.common.Commands;
 import ua.com.pandasushi.database.common.CourierCommand;
 import ua.com.pandasushi.database.common.CourierOrder;
-import ua.com.pandasushi.pandacourierv2.activities.LoginActivity;
-import ua.com.pandasushi.pandacourierv2.activities.OrdersActivity;
 import ua.com.pandasushi.pandacourierv2.adapters.OnExecuteAndMyOrdersCustomAdapter;
 import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
 import ua.com.pandasushi.pandacourierv2.services.TrackWritingService;
@@ -147,7 +142,7 @@ public class MyOrdersFragment extends Fragment {
             }
 
 //            HOST = sharedPreferences.getString("serverHost", "192.168.1.72");
-            HOST = sharedPreferences.getString("serverHost", "192.168.88.94");
+            HOST = sharedPreferences.getString("serverHost", "192.168.1.190");
             isConnected = sharedPreferences.getBoolean("connectionForMyOrders", true);
             handler.postDelayed(this, 1000);
         }

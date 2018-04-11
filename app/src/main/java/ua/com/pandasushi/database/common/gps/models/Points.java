@@ -15,6 +15,9 @@ public class Points implements Serializable{
 
     private Track track;
 
+    public Points() {
+    }
+
     public Points(String lat, String lon){
         this.lat=lat;
         this.lon=lon;

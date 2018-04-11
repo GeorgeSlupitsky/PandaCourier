@@ -7,8 +7,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
@@ -33,7 +31,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -46,11 +43,10 @@ import ua.com.pandasushi.database.common.Courier;
 import ua.com.pandasushi.database.common.CourierCommand;
 import ua.com.pandasushi.database.common.CourierOrder;
 import ua.com.pandasushi.database.common.gps.models.Points;
+import ua.com.pandasushi.database.common.gps.models.Track;
 import ua.com.pandasushi.pandacourierv2.DBHelper;
-import ua.com.pandasushi.pandacourierv2.activities.LoginActivity;
 import ua.com.pandasushi.pandacourierv2.activities.OrdersActivity;
 import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
-import ua.com.pandasushi.database.common.gps.models.Track;
 import ua.com.pandasushi.pandacourierv2.fragments.MyOrdersFragment;
 import ua.com.pandasushi.pandacourierv2.mapsmeapi.MWMPoint;
 import ua.com.pandasushi.pandacourierv2.mapsmeapi.MapsWithMeApi;
@@ -248,9 +244,14 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
         }
 
         holder.promiseTime.setText(sdf.format(order.getPromiseTime()));
-        holder.recommendedTime.setText(sdf.format(order.getPreferedTime()));
+        if(!order.getOnTime())
+            holder.recommendedTime.setText(sdf.format(order.getPreferedTime()));
+        else
+            holder.recommendedTime.setText(sdf.format(order.getPromiseTime()));
         holder.street.setText(order.getStreet());
         holder.address.setText(order.getHouse() + " / " + order.getApartament());
+
+        holder.recommendedTime.setTypeface(null, Typeface.BOLD);
 
         Boolean onExecute = (Boolean) data.get(position).get(mFrom[1]);
 

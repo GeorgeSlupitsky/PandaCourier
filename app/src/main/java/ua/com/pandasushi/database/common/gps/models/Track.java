@@ -36,6 +36,9 @@ public class Track implements Serializable {
 
     private List<CourierOrder> orders;
 
+    public Track() {
+    }
+
     public Long getTrackId() {
         return trackId;
     }

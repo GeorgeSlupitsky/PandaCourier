@@ -31,7 +31,7 @@ public class ServerIPActivity extends AppCompatActivity {
 
         sharedPreferences = getSharedPreferences("myPref", MODE_PRIVATE);
 
-        serverHost.setText(sharedPreferences.getString("serverHost", "192.168.88.94"));
+        serverHost.setText(sharedPreferences.getString("serverHost", "192.168.1.190"));
 
         save.setOnClickListener(new View.OnClickListener() {
             @Override

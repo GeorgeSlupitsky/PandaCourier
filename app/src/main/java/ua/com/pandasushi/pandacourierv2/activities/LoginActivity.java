@@ -4,13 +4,11 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Base64;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -125,7 +123,7 @@ public class LoginActivity extends AppCompatActivity {
         sharedPreferences = getSharedPreferences("myPref", MODE_PRIVATE);
 
 //        HOST = sharedPreferences.getString("serverHost", "192.168.1.72");
-        HOST = sharedPreferences.getString("serverHost", "192.168.88.94");
+        HOST = sharedPreferences.getString("serverHost", "192.168.1.190");
 
 
 
