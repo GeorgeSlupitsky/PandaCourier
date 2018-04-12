@@ -302,11 +302,6 @@ public class OnExecuteAndMyOrdersCustomAdapter extends ArrayAdapter<Map<String, 
                                                         sharedPreferences.edit().putString("orders", gson.toJson(orders)).apply();
                                                     }
 
-                                                    MyOrdersFragment.myOrdersNotDelivered.add(order);
-
-                                                    String myOrdersND = gson.toJson(MyOrdersFragment.myOrdersNotDelivered);
-
-                                                    sharedPreferences.edit().putString("myOrdersNotDelivered", myOrdersND).apply();
                                                 }
                                             } catch (Exception e) {
                                                 e.printStackTrace();

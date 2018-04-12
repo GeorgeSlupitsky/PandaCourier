@@ -31,6 +31,7 @@ import ua.com.pandasushi.database.common.Commands;
 import ua.com.pandasushi.database.common.CourierCommand;
 import ua.com.pandasushi.database.common.CourierOrder;
 import ua.com.pandasushi.pandacourierv2.adapters.OnExecuteAndMyOrdersCustomAdapter;
+import ua.com.pandasushi.pandacourierv2.connection.HostInfo;
 import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
 import ua.com.pandasushi.pandacourierv2.services.TrackWritingService;
 
@@ -141,8 +142,7 @@ public class MyOrdersFragment extends Fragment {
                 }
             }
 
-//            HOST = sharedPreferences.getString("serverHost", "192.168.1.72");
-            HOST = sharedPreferences.getString("serverHost", "192.168.1.190");
+            HOST = sharedPreferences.getString("serverHost", HostInfo.host);
             isConnected = sharedPreferences.getBoolean("connectionForMyOrders", true);
             handler.postDelayed(this, 1000);
         }
@@ -282,6 +282,13 @@ public class MyOrdersFragment extends Fragment {
                     if (order.getCourierId() != null){
                         if (order.getCourierId().equals(courierId)){
                             myOrders.add(order);
+                            if (order.getDeliverTime() == null){
+                                myOrdersNotDelivered.add(order);
+
+                                String myOrdersND = gson.toJson(myOrdersNotDelivered);
+
+                                sharedPreferences.edit().putString("myOrdersNotDelivered", myOrdersND).apply();
+                            }
                         }
                     }
                 }

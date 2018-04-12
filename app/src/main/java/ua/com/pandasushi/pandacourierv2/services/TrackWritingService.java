@@ -301,45 +301,42 @@ public class TrackWritingService extends Service implements LocationListener {
             sendBroadcast(broadcastIntent);
             handler.removeCallbacks(tracking);
         } else {
-            if (pointsList.size() >= 2) {
-                timeStop = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-                ContentValues cv = new ContentValues();
-                SQLiteDatabase db = dbHelper.getWritableDatabase();
-                String name = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date());
-                cv.put("name", name);
-                Track trackSaved = new Track();
-                trackSaved.setTimeStart(timeStart);
-                trackSaved.setTimeStop(timeStop);
-                List<Points> pointsListWithoutDuplicate = new ArrayList<>();
-                Iterator<Points> itr = pointsList.iterator();
-                boolean firstPoint = true;
-                while (itr.hasNext()){
-                    Points points = itr.next();
-                    if (firstPoint){
-                        pointsListWithoutDuplicate.add(points);
-                        firstPoint = false;
-                    }
-                    if (itr.hasNext()){
-                        Points points2 = itr.next();
-                        if (!points.getLat().equals(points2.getLat()) || !points.getLon().equals(points2.getLon())){
-                            pointsListWithoutDuplicate.add(points2);
-                        }
+            timeStop = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+            ContentValues cv = new ContentValues();
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            String name = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date());
+            cv.put("name", name);
+            Track trackSaved = new Track();
+            trackSaved.setTimeStart(timeStart);
+            trackSaved.setTimeStop(timeStop);
+            List<Points> pointsListWithoutDuplicate = new ArrayList<>();
+            Iterator<Points> itr = pointsList.iterator();
+            boolean firstPoint = true;
+            while (itr.hasNext()){
+                Points points = itr.next();
+                if (firstPoint){
+                    pointsListWithoutDuplicate.add(points);
+                    firstPoint = false;
+                }
+                if (itr.hasNext()){
+                    Points points2 = itr.next();
+                    if (!points.getLat().equals(points2.getLat()) || !points.getLon().equals(points2.getLon())){
+                        pointsListWithoutDuplicate.add(points2);
                     }
                 }
-                trackSaved.setPoints(pointsListWithoutDuplicate);
-                trackSaved.setOrders(orders);
-                trackSaved.setCourierId(courierId);
-                trackSaved.setPointsOnTrack(pointsOnTrack);
-                trackSaved.setTrackLenght(String.valueOf(fullLenght));
-
-                lenghtOfTrack = String.valueOf(fullLenght);
-
-                sharedPreferences.edit().putString("lastTrack", gson.toJson(track)).apply();
-
-                cv.put("track", gson.toJson(track).getBytes());
-                db.insert("trackdata", null, cv);
-
             }
+            trackSaved.setPoints(pointsListWithoutDuplicate);
+            trackSaved.setOrders(orders);
+            trackSaved.setCourierId(courierId);
+            trackSaved.setPointsOnTrack(pointsOnTrack);
+            trackSaved.setTrackLenght(String.valueOf(fullLenght));
+
+            lenghtOfTrack = String.valueOf(fullLenght);
+
+            sharedPreferences.edit().putString("lastTrack", gson.toJson(track)).apply();
+
+            cv.put("track", gson.toJson(track).getBytes());
+            db.insert("trackdata", null, cv);
 
             lenght = 0.0;
             fullLenght = 0.0;

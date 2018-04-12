@@ -150,6 +150,9 @@ public class OdometerInfoActivity extends AppCompatActivity {
                             }
                         } else {
                             sharedPreferences.edit().putBoolean("correctCloseShift", false).apply();
+
+                            stopService(new Intent(getApplicationContext(), TrackWritingService.class));
+
                             String encoded = Base64.encodeToString(b, Base64.DEFAULT);
                             sharedPreferences.edit().putString("photo", encoded).apply();
                             sharedPreferences.edit().putString("odometerData", String.valueOf(odometerDataVal)).apply();
@@ -161,7 +164,6 @@ public class OdometerInfoActivity extends AppCompatActivity {
                             Intent intent = new Intent(OdometerInfoActivity.this, LoginActivity.class);
                             startActivity(intent);
                             OrdersActivity.fa.finish();
-                            stopService(new Intent(getApplicationContext(), TrackWritingService.class));
                             finish();
                         }
                     }

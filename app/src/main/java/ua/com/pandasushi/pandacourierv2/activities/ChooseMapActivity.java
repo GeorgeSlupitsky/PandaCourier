@@ -11,6 +11,8 @@ import android.widget.RadioGroup;
 
 import com.pandasushi.pandacourierv2.R;
 
+import ua.com.pandasushi.pandacourierv2.connection.HostInfo;
+
 /**
  * Created by postp on 22.03.2018.
  */
@@ -41,8 +43,7 @@ public class ChooseMapActivity extends AppCompatActivity {
 
         maps = sharedPreferences.getString("maps", "GoogleMaps");
 
-//        serverHost.setText(sharedPreferences.getString("serverHost", "192.168.1.72"));
-        serverHost.setText(sharedPreferences.getString("serverHost", "192.168.1.190"));
+        serverHost.setText(sharedPreferences.getString("serverHost", HostInfo.host));
 
         if (maps.equals("MapsME")){
             mapsMeRadio.setChecked(true);

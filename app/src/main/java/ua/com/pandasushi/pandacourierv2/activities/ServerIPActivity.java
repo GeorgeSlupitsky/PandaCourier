@@ -10,6 +10,8 @@ import android.widget.EditText;
 
 import com.pandasushi.pandacourierv2.R;
 
+import ua.com.pandasushi.pandacourierv2.connection.HostInfo;
+
 /**
  * Created by User9 on 04.04.2018.
  */
@@ -31,7 +33,7 @@ public class ServerIPActivity extends AppCompatActivity {
 
         sharedPreferences = getSharedPreferences("myPref", MODE_PRIVATE);
 
-        serverHost.setText(sharedPreferences.getString("serverHost", "192.168.1.190"));
+        serverHost.setText(sharedPreferences.getString("serverHost", HostInfo.host));
 
         save.setOnClickListener(new View.OnClickListener() {
             @Override

@@ -28,6 +28,7 @@ import ua.com.pandasushi.database.common.Commands;
 import ua.com.pandasushi.database.common.Courier;
 import ua.com.pandasushi.database.common.CourierCommand;
 import ua.com.pandasushi.database.common.gps.models.Track;
+import ua.com.pandasushi.pandacourierv2.connection.HostInfo;
 import ua.com.pandasushi.pandacourierv2.connection.SocketAsyncTask;
 
 public class LoginActivity extends AppCompatActivity {
@@ -122,8 +123,7 @@ public class LoginActivity extends AppCompatActivity {
 
         sharedPreferences = getSharedPreferences("myPref", MODE_PRIVATE);
 
-//        HOST = sharedPreferences.getString("serverHost", "192.168.1.72");
-        HOST = sharedPreferences.getString("serverHost", "192.168.1.190");
+        HOST = sharedPreferences.getString("serverHost", HostInfo.host);
 
 
 
@@ -244,11 +244,13 @@ public class LoginActivity extends AppCompatActivity {
                 if (responseCheck != null){
                     if (responseCheck.equals(OK)){
                         if(!isCorrectCloseShift){
+                            sharedPreferences.edit().putBoolean("connectionForMyOrders", true).apply();
                             String responseShift = null;
                             String responseSaveTrack = null;
                             try {
                                 sharedPreferences.edit().putString("myOrdersNotDelivered", "").apply();
                                 sharedPreferences.edit().putString("orders", "").apply();
+                                sharedPreferences.edit().putString("myOrders", "").apply();
                                 String encoded = sharedPreferences.getString("photo", "");
                                 byte[] b = Base64.decode(encoded.getBytes(), Base64.DEFAULT);
                                 Double odometerDataVal = Double.parseDouble(sharedPreferences.getString("odometerData", "0"));
@@ -278,6 +280,9 @@ public class LoginActivity extends AppCompatActivity {
                                 if (responseShift.equals(OK) && responseSaveTrack.equals(OK)){
                                     sharedPreferences.edit().putBoolean("correctCloseShift", true).apply();
                                     sharedPreferences.edit().putBoolean("startShift", false).apply();
+                                    sharedPreferences.edit().putString("myOrdersNotDelivered", "").apply();
+                                    sharedPreferences.edit().putString("orders", "").apply();
+                                    sharedPreferences.edit().putString("myOrders", "").apply();
 
                                     Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                                     if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
