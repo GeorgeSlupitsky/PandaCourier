@@ -24,8 +24,10 @@ import com.pandasushi.pandacourierv2.R;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import ua.com.pandasushi.database.common.Commands;
 import ua.com.pandasushi.database.common.CourierCommand;
@@ -46,7 +48,7 @@ public class MyOrdersFragment extends Fragment {
     private final String ATTRIBUTE_NAME_MAPS = "maps";
     private final String ATTRIBUTE_NAME_COURIER_ID = "courier id";
 
-    public static List<CourierOrder> myOrdersNotDelivered;
+    public static Set<CourierOrder> myOrdersNotDelivered;
     public static String HOST;
 
     private List<CourierOrder> orders;
@@ -206,11 +208,11 @@ public class MyOrdersFragment extends Fragment {
         String myOrdersND = sharedPreferences.getString("myOrdersNotDelivered", "");
 
         if (!myOrdersND.equals("")){
-            myOrdersNotDelivered = gson.fromJson(myOrdersND, new TypeToken<List<CourierOrder>>(){}.getType());
+            myOrdersNotDelivered = gson.fromJson(myOrdersND, new TypeToken<Set<CourierOrder>>(){}.getType());
         }
 
         if (myOrdersNotDelivered == null){
-            myOrdersNotDelivered = new ArrayList<>();
+            myOrdersNotDelivered = new HashSet<>();
         }
 
         createCustomAdapter();
