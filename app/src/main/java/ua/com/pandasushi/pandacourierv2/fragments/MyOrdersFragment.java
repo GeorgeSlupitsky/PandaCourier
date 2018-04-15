@@ -48,7 +48,7 @@ public class MyOrdersFragment extends Fragment {
     private final String ATTRIBUTE_NAME_MAPS = "maps";
     private final String ATTRIBUTE_NAME_COURIER_ID = "courier id";
 
-    public static Set<CourierOrder> myOrdersNotDelivered;
+    public static List<CourierOrder> myOrdersNotDelivered;
     public static String HOST;
 
     private List<CourierOrder> orders;
@@ -212,7 +212,7 @@ public class MyOrdersFragment extends Fragment {
         }
 
         if (myOrdersNotDelivered == null){
-            myOrdersNotDelivered = new HashSet<>();
+            myOrdersNotDelivered = new ArrayList<>();
         }
 
         createCustomAdapter();
@@ -285,11 +285,15 @@ public class MyOrdersFragment extends Fragment {
                         if (order.getCourierId().equals(courierId)){
                             myOrders.add(order);
                             if (order.getDeliverTime() == null){
-                                myOrdersNotDelivered.add(order);
-
-                                String myOrdersND = gson.toJson(myOrdersNotDelivered);
-
-                                sharedPreferences.edit().putString("myOrdersNotDelivered", myOrdersND).apply();
+                                if (myOrdersNotDelivered.size() != 0){
+                                    for (CourierOrder orderND: myOrdersNotDelivered){
+                                        if (!orderND.getCharcode().equals(order.getCharcode())){
+                                            myOrdersNotDelivered.add(order);
+                                        }
+                                    }
+                                } else {
+                                    myOrdersNotDelivered.add(order);
+                                }
                             }
                         }
                     }

@@ -6,8 +6,8 @@ package ua.com.pandasushi.pandacourierv2.connection;
 
 public class HostInfo {
 
-    public final static String host = "192.168.88.24"; // work my laptop
-//    public final static String host = "192.168.1.190"; // Panda
+//    public final static String host = "192.168.88.24"; // work my laptop
+    public final static String host = "192.168.1.190"; // Panda
 
 
 }
